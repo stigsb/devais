@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+*.egg-info/
+
+# CAD outputs
+cad/output/*.stl
+cad/output/*.step
+cad/output/*.png
+*.FCStd
+*.FCStd1
+
+# IDE
+.vscode/*
+!.vscode/spellright.dict
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.o
+*.hex
+*.bin
+
+# Documentation builds
+docs/_build/
+/cad/output

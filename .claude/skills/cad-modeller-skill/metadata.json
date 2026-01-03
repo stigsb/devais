@@ -1,0 +1,37 @@
+{
+  "name": "cad-modeller",
+  "version": "1.0.0",
+  "description": "Create 3D CAD models programmatically using CadQuery. Design enclosures, mechanical parts, and 3D-printable components through code with proper tolerances and manufacturing considerations.",
+  "author": "stigsb",
+  "tags": ["cad", "3d-modeling", "cadquery", "mechanical-design", "3d-printing", "engineering", "manufacturing"],
+  "triggerPatterns": [
+    "design a 3D model",
+    "create an enclosure",
+    "3D print",
+    "STL file",
+    "CAD design",
+    "mechanical part",
+    "create a case for",
+    "design a mount",
+    "design a bracket",
+    "create a holder"
+  ],
+  "capabilities": [
+    "Parametric 3D modeling with CadQuery",
+    "Component layout and mounting design",
+    "Manufacturing tolerance application",
+    "STL and STEP file generation",
+    "Assembly design with mating features",
+    "Wire routing and cable management",
+    "Speaker grilles and ventilation patterns",
+    "Press-fit and screw mounting features"
+  ],
+  "dependencies": {
+    "python": ">=3.10",
+    "packages": [
+      "cadquery>=2.4.0"
+    ]
+  },
+  "projectType": "hardware-design",
+  "mainFile": "SKILL.md"
+}

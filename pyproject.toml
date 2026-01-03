@@ -1,0 +1,16 @@
+[project]
+name = "devais"
+version = "0.1.0"
+description = "Handheld AI Assistant Device - 3D CAD design and firmware"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "cadquery>=2.4.0",
+    "circuit-synth>=0.1.0",
+    "jupyter>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+]
