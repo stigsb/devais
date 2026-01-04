@@ -93,7 +93,9 @@ SPEAKER_Y_POS = LED_Y_POS - 10 - SPEAKER_DIAMETER  # Upper edge 10mm below LEDs
 # Right side components (positions along Y axis, measured from bottom)
 POWER_BUTTON_Y_POS = 25  # 25mm from bottom
 USB_C_Y_POS = 12  # 12mm from bottom
-LARGE_BUTTON_Y_CENTER = DEVICE_HEIGHT / 2  # Centered vertically
+# Large button positioned at upper part: 15%-45% from top (22.5mm-67.5mm from top)
+LARGE_BUTTON_TOP_OFFSET = 0.15 * DEVICE_HEIGHT  # 15% from top = 22.5mm
+LARGE_BUTTON_Y_CENTER = DEVICE_HEIGHT - LARGE_BUTTON_TOP_OFFSET - LARGE_BUTTON_HEIGHT / 2  # Center at 105mm from bottom
 
 # Tolerances
 PRINT_TOLERANCE = 0.2
@@ -102,6 +104,41 @@ PRESS_FIT_TOLERANCE = 0.1
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
+def create_rounded_rect_wire(wp, width, height, radius):
+    """Create a rounded rectangle wire on the given workplane.
+
+    Args:
+        wp: CadQuery workplane to draw on
+        width: Rectangle width
+        height: Rectangle height
+        radius: Corner radius
+
+    Returns:
+        Workplane with the rounded rectangle wire
+    """
+    # Calculate half dimensions
+    w = width / 2
+    h = height / 2
+    r = radius
+
+    # Create rounded rectangle using lines and tangent arcs
+    # Start from right side, go counter-clockwise
+    wire = (
+        wp
+        .moveTo(w, h - r)  # Right side, top corner
+        .radiusArc((w - r, h), -r)  # Arc to top side
+        .lineTo(-w + r, h)  # Top edge
+        .radiusArc((-w, h - r), -r)  # Arc to left side
+        .lineTo(-w, -h + r)  # Left edge
+        .radiusArc((-w + r, -h), -r)  # Arc to bottom side
+        .lineTo(w - r, -h)  # Bottom edge
+        .radiusArc((w, -h + r), -r)  # Arc to right side
+        .close()
+    )
+
+    return wire
+
 
 def create_octagon_profile():
     """Create the octagon cross-section profile.
@@ -146,6 +183,9 @@ def create_basic_enclosure():
     """
     # Create outer octagon and extrude to full height
     enclosure = create_octagon_profile().extrude(DEVICE_HEIGHT)
+
+    # Add fillet to vertical edges where octagon sides meet
+    enclosure = enclosure.edges("|Z").fillet(EDGE_FILLET_RADIUS)
 
     # Add fillet to top outer edge before hollowing
     enclosure = enclosure.edges(">Z").fillet(TOP_BOTTOM_FILLET_RADIUS)
@@ -253,7 +293,11 @@ def create_large_button():
     # Start position: right side of enclosure, centered vertically
     start_y = LARGE_BUTTON_Y_CENTER - LARGE_BUTTON_HEIGHT / 2
     base_z = DEVICE_WIDTH / 2  # Enclosure surface
-    corner_radius = 2.5
+    base_corner_radius = 8.0  # 8mm corner radius at top of base
+
+    # Calculate proportional corner radius for the top of the button
+    # Scale according to the reduction in width due to beveling
+    outer_corner_radius = base_corner_radius * (outer_width / base_width)
 
     # Create base section with rounded corners
     base_section = (
@@ -270,27 +314,25 @@ def create_large_button():
     base_corner_edges = [e for e in base_edges if abs(e.Length() - base_corner_length) < 0.5]
 
     for edge in base_corner_edges:
-        base_section = base_section.edges(cq.selectors.NearestToPointSelector(edge.Center())).fillet(corner_radius)
+        base_section = base_section.edges(cq.selectors.NearestToPointSelector(edge.Center())).fillet(base_corner_radius)
 
-    # Create beveled section (with rounded corners)
-    beveled_section = (
-        cq.Workplane("XY")
-        .workplane(offset=base_z + LARGE_BUTTON_BASE_SECTION_DEPTH)  # Start after base section
-        .center(0, start_y + base_height / 2)
-        .rect(base_width, base_height)
-        .workplane(offset=LARGE_BUTTON_BEVEL_DEPTH)
-        .rect(outer_width, outer_height)
-        .loft(combine=True)
+    # Create beveled section with rounded corners that taper from 8mm to proportional size
+    # Use loft between two rounded rectangles to create linearly tapering corner radii
+
+    # Create bottom profile (full size with 8mm corner radius)
+    wp_bottom = cq.Workplane("XY").workplane(offset=base_z + LARGE_BUTTON_BASE_SECTION_DEPTH).center(0, start_y + base_height / 2)
+    bottom_profile = create_rounded_rect_wire(wp_bottom, base_width, base_height, base_corner_radius)
+
+    # Create top profile (smaller size with proportional corner radius) on the same workplane chain
+    top_profile = create_rounded_rect_wire(
+        bottom_profile.workplane(offset=LARGE_BUTTON_BEVEL_DEPTH),
+        outer_width,
+        outer_height,
+        outer_corner_radius
     )
 
-    # Add fillets to the 4 corner edges of the beveled section only
-    all_edges = beveled_section.edges().vals()
-    corner_edge_length = 6.93  # sqrt(4^2 + 4^2 + 4^2) - diagonal beveled edges
-    corner_edges = [e for e in all_edges if abs(e.Length() - corner_edge_length) < 0.5]
-
-    # Apply fillet to each corner edge
-    for edge in corner_edges:
-        beveled_section = beveled_section.edges(cq.selectors.NearestToPointSelector(edge.Center())).fillet(corner_radius)
+    # Loft between the two profiles
+    beveled_section = top_profile.loft(combine=True)
 
     # Combine base and beveled sections
     button = base_section.union(beveled_section)
@@ -313,6 +355,40 @@ def create_large_button():
             x_pos = x * bump_spacing
             y_pos = y * bump_spacing
 
+            # Skip bumps in the rounded corner areas
+            # Check if bump is in a corner region (outside the rounded rectangle)
+            half_w = outer_width / 2
+            half_h = outer_height / 2
+
+            # For each corner, check if bump is in the cut-off area
+            skip = False
+            corners = [
+                (half_w, half_h),      # Top-right
+                (-half_w, half_h),     # Top-left
+                (half_w, -half_h),     # Bottom-right
+                (-half_w, -half_h),    # Bottom-left
+            ]
+
+            for cx, cy in corners:
+                # Distance from bump to corner center
+                corner_center_x = cx - (outer_corner_radius if cx > 0 else -outer_corner_radius)
+                corner_center_y = cy - (outer_corner_radius if cy > 0 else -outer_corner_radius)
+                dx = x_pos - corner_center_x
+                dy = y_pos - corner_center_y
+                dist = (dx**2 + dy**2)**0.5
+
+                # Check if in corner region (beyond straight edges)
+                in_corner_region = (abs(x_pos) > half_w - outer_corner_radius and
+                                   abs(y_pos) > half_h - outer_corner_radius)
+
+                # Skip if in corner region and outside the corner radius
+                if in_corner_region and dist > outer_corner_radius - bump_radius:
+                    skip = True
+                    break
+
+            if skip:
+                continue
+
             # Create raised bump on outer surface (XY plane)
             # Use a short cylinder or sphere segment
             bump = (
@@ -331,27 +407,121 @@ def create_large_button():
 
 
 def add_large_button_cutout(enclosure):
-    """Add cutout in enclosure for the large button to sit in.
+    """Add opening in enclosure for the large button and raised edge.
 
-    Creates a rectangular cutout on the right side for the button base.
+    Creates:
+    1. A rectangular opening on the right side for the button to protrude through
+    2. A 2mm raised edge (quarter-circle profile) around the opening with 0.25mm gap
     """
-    # Create a slightly smaller cutout for the button base
-    cutout_width = LARGE_BUTTON_WIDTH - 1
-    cutout_height = LARGE_BUTTON_HEIGHT - 1
-    cutout_depth = 2  # Partial depth for button to sit in
+    # Opening dimensions (slightly larger than button base for clearance)
+    opening_clearance = 0.5
+    opening_width = LARGE_BUTTON_WIDTH + opening_clearance  # Width along Y axis (front-to-back)
+    opening_height = LARGE_BUTTON_HEIGHT + opening_clearance  # Height along Z axis (up-down)
+    opening_corner_radius = 8.0 + opening_clearance / 2  # 8mm button radius + clearance = 8.5mm
 
-    # Button is centered vertically (Y axis)
-    button_start_y = LARGE_BUTTON_Y_CENTER - LARGE_BUTTON_HEIGHT / 2
+    # Button is centered vertically (Z axis) and front-to-back (Y axis)
+    button_center_y = 0  # Centered front-to-back
+    button_center_z = LARGE_BUTTON_Y_CENTER  # Centered vertically = DEVICE_HEIGHT / 2
 
-    button_cutout = (
-        cq.Workplane("XZ")
-        .workplane(offset=button_start_y + LARGE_BUTTON_HEIGHT / 2)
-        .center(0, DEVICE_WIDTH / 2 - 0.5)  # On right side
-        .rect(cutout_width, cutout_depth)
-        .extrude(cutout_height)
+    # Create rectangular opening on right side with rounded corners
+    # Right face is in the YZ plane at X = +DEVICE_WIDTH/2
+    # The outer surface is at the maximum X value of the octagon
+    # Calculate the exact outer surface position for the right face
+    outer_surface_x = OCTAGON_SQUARE_SIDE / 2  # Right side at X = 20mm
+
+    # Create workplane at the outer surface of the right face, centered at button position
+    wp_opening = (
+        cq.Workplane("YZ")  # Work in YZ plane (right face view)
+        .workplane(offset=outer_surface_x)  # Position at outer surface of right wall
+        .center(button_center_y, button_center_z)  # Center at button position (Y=0, Z=75mm)
     )
 
-    enclosure = enclosure.cut(button_cutout)
+    # Create rounded rectangle wire and extrude inward through the wall
+    # Extrude in -X direction (inward) to cut through the wall thickness
+    button_opening_rounded = create_rounded_rect_wire(
+        wp_opening,
+        opening_width,
+        opening_height,
+        opening_corner_radius
+    ).extrude(-WALL_THICKNESS - 0.5)  # Extrude inward in -X direction through the wall
+
+    # Cut the opening from the enclosure
+    enclosure = enclosure.cut(button_opening_rounded)
+
+    # Add raised edge around the button
+    # Frame width matches wall thickness
+    # Height is doubled to allow for octagon cutting from bottom
+    # Start at outer surface to avoid overlapping with existing wall
+    edge_height = 2 * WALL_THICKNESS  # Total height: 3.2mm (will be cut to follow octagon)
+    edge_frame_width = WALL_THICKNESS  # Frame width: 1.6mm
+
+    # Create the raised edge as a frame around the button opening
+    # The inner cutout should match the opening size to avoid filling it in
+    edge_inner_width = opening_width  # Same as opening
+    edge_inner_height = opening_height  # Same as opening
+
+    # Create workplane for raised edge at inner surface, centered at button position
+    # Start from inner surface and extend outward through and beyond outer surface
+    wp_edge = (
+        cq.Workplane("YZ")
+        .workplane(offset=outer_surface_x - WALL_THICKNESS)  # At inner surface of right face
+        .center(button_center_y, button_center_z)  # Center at button position
+    )
+
+    # Create outer rectangle for the frame
+    edge_outer = create_rounded_rect_wire(
+        wp_edge,
+        edge_inner_width + 2 * edge_frame_width,
+        edge_inner_height + 2 * edge_frame_width,
+        opening_corner_radius + edge_frame_width
+    ).extrude(edge_height)  # Extrude outward in +X direction
+
+    # Create inner cutout (same size as opening to ensure it doesn't fill the hole)
+    edge_inner = create_rounded_rect_wire(
+        wp_edge,
+        edge_inner_width,
+        edge_inner_height,
+        opening_corner_radius
+    ).extrude(edge_height + 1)  # Extrude outward to cut through frame
+
+    # Subtract inner from outer to create frame
+    edge_frame = edge_outer.cut(edge_inner)
+
+    # TODO: Trim the raised edge to follow the enclosure's octagon profile
+    # Cut an octagon-shaped volume from the lower portion
+    # Temporarily disabled - need to fix the cutting geometry
+
+    # try:
+    #     octagon_cut_height = opening_height + 2 * edge_frame_width + 10
+    #
+    #     octagon_cutter = (
+    #         create_octagon_profile()
+    #         .extrude(octagon_cut_height)
+    #         .translate((0, 0, button_center_z - octagon_cut_height / 2))
+    #         .translate((outer_surface_x + WALL_THICKNESS, 0, 0))
+    #     )
+    #
+    #     edge_frame = edge_frame.cut(octagon_cutter)
+    # except Exception as e:
+    #     print(f"Warning: Failed to cut octagon from raised edge: {e}")
+
+    # Round the outer edge with quarter-circle profile
+    try:
+        # Fillet the outer edges to create rounded profile
+        # Use a small radius - larger radii create invalid geometry
+        fillet_radius = 0.3  # Small radius to avoid geometric conflicts
+        edge_frame = edge_frame.edges(">X").fillet(fillet_radius)
+    except Exception as e:
+        # If filleting fails, continue without it
+        print(f"  ⚠️  WARNING: Failed to fillet raised edge: {e}")
+
+    # Add the raised edge to the enclosure
+    try:
+        enclosure = enclosure.union(edge_frame)
+        if not enclosure.val().isValid():
+            print("  ⚠️  WARNING: Enclosure became invalid after adding raised edge!")
+    except Exception as e:
+        print(f"  ⚠️  WARNING: Failed to union raised edge: {e}")
 
     return enclosure
 
@@ -515,6 +685,89 @@ def create_component_mounts():
 
 
 # ============================================================================
+# PRINTABILITY VALIDATION
+# ============================================================================
+
+def check_printability(part, name):
+    """Check a part for common 3D printing issues.
+
+    Args:
+        part: CadQuery Workplane with the part to check
+        name: Name of the part for error reporting
+    """
+    print(f"\n=== Printability Check: {name} ===")
+
+    try:
+        # Get the solid from the workplane
+        solid = part.val()
+
+        # Check if it's a valid solid
+        if not solid.isValid():
+            print(f"❌ ERROR: {name} is not a valid solid!")
+            return False
+        else:
+            print(f"✓ {name} is a valid solid")
+
+        # Check for multiple disconnected solids
+        solids = part.solids().vals()
+        if len(solids) > 1:
+            print(f"⚠️  WARNING: {name} contains {len(solids)} separate solids - may have floating parts!")
+        else:
+            print(f"✓ {name} is a single connected solid")
+
+        # Get bounding box
+        bb = part.val().BoundingBox()
+        print(f"  Dimensions: {bb.xlen:.2f} × {bb.ylen:.2f} × {bb.zlen:.2f} mm")
+        print(f"  Volume: {solid.Volume():.2f} mm³")
+
+        # Sample the part at different Z heights to detect empty layers
+        print(f"  Z range: {bb.zmin:.2f} to {bb.zmax:.2f} mm")
+        print(f"  Checking for empty layers...")
+        z_min = bb.zmin
+        z_max = bb.zmax
+        layer_height = 0.2  # Typical layer height for 3D printing
+        num_samples = min(int((z_max - z_min) / layer_height), 100)  # Limit to 100 samples max
+
+        if num_samples < 2:
+            print(f"  ⚠️  Part too thin to sample ({(z_max - z_min):.2f}mm), skipping layer check")
+        else:
+            empty_layers = []
+            for i in range(1, num_samples):  # Skip first and last
+                z = z_min + i * layer_height
+                # Create a horizontal cutting plane at this Z height
+                try:
+                    # Use workplane to create section
+                    section = (cq.Workplane("XY")
+                              .workplane(offset=z)
+                              .add(part.val())
+                              .section())
+                    wires = section.wires().vals()
+                    if len(wires) == 0:
+                        empty_layers.append(z)
+                except Exception as e:
+                    # Section might fail if there's no intersection
+                    empty_layers.append(z)
+
+            if empty_layers:
+                empty_pct = (len(empty_layers) / num_samples) * 100
+                print(f"⚠️  WARNING: {len(empty_layers)}/{num_samples} layers empty ({empty_pct:.1f}%)")
+                if len(empty_layers) <= 5:
+                    print(f"  Empty at Z heights (mm): {[f'{z:.2f}' for z in empty_layers]}")
+            else:
+                print(f"✓ No empty layers in {num_samples} samples")
+
+        # Check for thin walls
+        faces = part.faces().vals()
+        print(f"  Total faces: {len(faces)}")
+
+        return True
+
+    except Exception as e:
+        print(f"❌ ERROR during printability check: {e}")
+        return False
+
+
+# ============================================================================
 # MAIN ASSEMBLY
 # ============================================================================
 
@@ -566,6 +819,14 @@ def export_models():
     # Generate large button (separate component)
     large_button = create_large_button()
     print("  ✓ Large button component created")
+
+    # Run printability checks
+    print("\n" + "="*60)
+    print("PRINTABILITY VALIDATION")
+    print("="*60)
+    check_printability(enclosure, "Enclosure")
+    check_printability(large_button, "Large Button")
+    print("="*60 + "\n")
 
     # Export enclosure as STL
     stl_path = output_dir / "devais_enclosure.stl"

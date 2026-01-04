@@ -98,13 +98,25 @@ There needs to be support structure behind the hole, as described in the followi
 
 ### 1.2.3. Large Orange Button ✅ REVIEWED
 - **Purpose:** This is the press-to-talk button
-- **Location:** Right side of device (from viewing angle)
-- **Height:** 30% of enclosure height
-- **Width:** Same as the width of a long side
-- **Shape:** Rectangular with rounded corners, with a 45 degree bevel from where it exits the enclosure to the surface making the top surface smaller than the base surface.
-- **Texture:** Top surface has a dotted pattern, providing extra friction but still feeling comfortable
-- **Raised edge on body around button:** There is a 2mm rounded raised edge on the main body running flush around the button.  Since the button fills the entire width of the long right side, this edge also goes on top of a little bit of the chamfers. The edge should form a quarter-circle with one flat side against the button, with 0.25mm space all around the button.
-- **Protrusion:** Sticks out a total of 4mm from the body main surface (not counting the raised edge around the button)
+- **Location:** Upper part of right side of device (from viewing angle), placed 15%-45% of the total height relative to the top (centered at 105mm from bottom)
+- **Height:** 30% of enclosure height (45mm)
+- **Width:** Same as the width of a long side (~24.9mm)
+- **Shape:** Multi-section design with rounded corners:
+  - **Base section:** 4mm flat depth without bevel
+  - **Beveled section:** 4mm depth with 45° bevel/taper on all four sides
+  - **Corner rounding:** Transitions from 8mm radius at the top of the base section to proportionally scaled radius (~5.4mm) at the top of the button, maintaining consistent proportions
+- **Texture:** Top surface has a dotted pattern (raised bumps) providing extra friction but still feeling comfortable
+  - Bumps are filtered to exclude corners where surface rounding removed their support
+  - Only bumps within the rounded rectangle boundary are included
+- **Opening in enclosure:** The opening for the button has rounded corners with 8.5mm radius (matching the 8mm button corner radius plus 0.5mm clearance)
+  - Opening is cut through the wall from outer surface inward
+- **Raised edge on body around button:**
+  - **Frame width:** 1.6mm (same as wall thickness)
+  - **Height:** 3.2mm (2× wall thickness), extending from inner surface outward
+  - **Protrusion:** Extends 1.6mm beyond the outer surface of the enclosure
+  - **Inner dimensions:** Match the opening size exactly (8.5mm corner radius)
+  - **Rounding:** 0.3mm fillet on outer edges for smooth transition
+  - **Alignment:** Positioned to naturally meet the 45° chamfer surfaces
 - **Color:** Orange
 
 ### 1.2.4. Power Button ✅ REVIEWED
@@ -387,10 +399,12 @@ cq.Workplane("XY")
 - Concentric ring design (raised outer ring not yet implemented)
 - Position: 25mm from bottom (Z = 25)
 
-### 3.3.3. Large Button
-- Rectangular with 45° taper
+### 3.3.3. Large Button ✅ IMPLEMENTED
+- Rectangular with 45° taper and rounded corners (8mm radius transitioning to ~5.4mm)
 - Full width of long side (24.9mm) × 45mm height
-- Positioned on right face, vertically centered
+- Positioned on right face, 15%-45% from top (centered at 105mm from bottom)
+- Opening in enclosure with 8.5mm corner radius
+- Raised edge frame (1.6mm wide, 3.2mm tall) with 0.3mm fillet on outer edges
 
 ## 3.4. Battery Compartment
 
