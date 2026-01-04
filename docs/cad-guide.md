@@ -14,8 +14,8 @@ uv sync
 uv run python cad/enclosure.py
 
 # Output files will be in cad/output/
-# - devais_enclosure.stl (for 3D printing)
-# - devais_enclosure.step (for CAD software)
+# - enclosure.stl (Main body)
+# - large_button.stl (The push-to-talk button)
 ```
 
 ## Design Parameters
@@ -23,28 +23,35 @@ uv run python cad/enclosure.py
 All key dimensions are defined at the top of `cad/enclosure.py`:
 
 ### Enclosure Dimensions
-- `DEVICE_WIDTH`: 30mm (diameter)
-- `DEVICE_DEPTH`: 30mm (diameter)  
-- `DEVICE_HEIGHT`: 150mm
+- **Shape**: Octagonal Prism (Square with chamfered corners)
+- `DEVICE_WIDTH`: 40.0mm (Flat-to-flat distance)
+- `DEVICE_HEIGHT`: 150.0mm
 - `WALL_THICKNESS`: 2.5mm
-
-### Component Dimensions
-Component sizes are defined based on actual hardware specs:
-- 18650 battery: 18.6mm × 65mm
-- XIAO nRF52840: 21mm × 17.5mm
-- Speakers, microphones, buttons, etc.
+- `FILLET_RADIUS`: 4.0mm (Edges and corners)
 
 ### Component Positioning
-Vertical positions (Z-axis) from bottom of device:
-- `BATTERY_BOTTOM_OFFSET`: 5mm
-- `BUTTON_Z_OFFSET`: 65% up device (97.5mm)
-- `SPEAKER_Z_OFFSET`: 35% up device (52.5mm)
-- `MIC_Z_OFFSET`: 85% up device (127.5mm)
-- `LED_Z_OFFSET`: 95% up device (142.5mm)
+Vertical positions (Z-axis) are measured from the bottom of the device:
 
-### Tolerances
-- `PRINT_TOLERANCE`: 0.2mm (general clearance)
-- `PRESS_FIT_TOLERANCE`: 0.1mm (tight fits)
+- **Push-to-Talk Button**: Centered at 105.0mm (Right Side)
+- **Power Button**: 25.0mm (Right Side)
+- **USB-C Port**: 12.0mm (Right Side)
+- **Microphone**: 10.0mm (Front Side)
+- **Speaker**: Upper Front (approx. 120-130mm, relative to LEDs)
+- **LEDs**: 140.0mm (Front Side, 10mm from top)
+
+### Component Dimensions
+- **Large Button**: 24.9mm width × 45mm height
+- **Speaker**: ~20mm diameter (80% of long side width)
+- **Power Button**: 8mm diameter
+- **USB-C**: 9.5mm × 3.7mm
+
+## Coordinate System
+
+The design uses the following coordinate system:
+- **Z-axis**: Vertical height (0 to 150mm)
+- **XY-plane**: The octagonal cross-section
+- **Front Face**: +Y direction
+- **Right Face**: +X direction
 
 ## Modifying the Design
 
@@ -53,104 +60,62 @@ Vertical positions (Z-axis) from bottom of device:
 1. Open `cad/enclosure.py`
 2. Modify parameters at the top of the file
 3. Run `uv run python cad/enclosure.py` to regenerate
-4. The new STL/STEP files will reflect your changes
 
-Example - making the device taller:
+Example - moving the large button:
 ```python
-DEVICE_HEIGHT = 160  # Changed from 150
+LARGE_BTN_CENTER_FROM_BOTTOM = 110.0  # Changed from 105.0
 ```
 
 ### Adding New Features
 
 The script is organized into modular functions:
 
-- `create_basic_enclosure()` - Main cylindrical body
-- `add_battery_compartment()` - Battery holder
-- `add_button_cutout()` - Push-to-talk button
-- `add_speaker_grille()` - Speaker holes
-- `add_mic_hole()` - Microphone opening
+- `create_octagonal_prism()` - Base geometry
+- `add_large_button_feature()` - Opening and frame for main button
+- `add_power_button()` - Power button cutout
+- `add_usbc_port()` - USB-C port cutout
+- `add_speaker_grille()` - Perforated speaker holes
+- `add_mic_hole_and_mount()` - Mic hole and internal pocket
 - `add_led_holes()` - Status LED openings
-- `add_usbc_port()` - Charging port
-- `create_component_mounts()` - PCB mounting posts
 
-To add a new feature, create a similar function and call it in `generate_enclosure()`.
+To add a new feature, create a similar function and call it in `build_enclosure()`.
 
 ## Design Considerations
 
 ### 3D Printing
-- Wall thickness of 2.5mm provides good strength
-- Tolerances account for typical FDM printer accuracy
-- Speaker grille uses 0.75mm holes with 2.5mm spacing
-- Design prints well without supports when oriented vertically
-
-### Component Clearances
-- Battery compartment sized for standard 18650
-- Mounting posts positioned for component boards
-- Wire routing channels (to be added) will connect components
-- Consider assembly order when adding features
+- **Orientation**: Print vertically (standing on its bottom face).
+- **Supports**: The octagonal shape and 45° chamfers are self-supporting. The large button frame and internal pockets may require minimal supports depending on the printer.
+- **Tolerances**: 
+    - `PRINT_TOLERANCE` and `PRESS_FIT_TOLERANCE` should be considered for mating parts.
+    - The large button opening includes clearance for the button movement.
 
 ### Ergonomics  
-- 30mm diameter fits comfortably in hand
-- Push-to-talk button at 65% height is thumb-accessible
-- Rounded edges for comfort (can be added via fillets)
+- The 40mm octagonal shape ("square stick with chamfered corners") provides a comfortable grip.
+- The large, textured orange button is positioned for easy thumb activation.
+- Rounded edges (4mm fillet) ensure no sharp corners.
 
-## Working with Claude Code
+## Working with AI Assistants
 
-This parametric design is ideal for AI-assisted iteration. You can ask Claude Code to:
+This parametric design is ideal for AI-assisted iteration. You can ask for changes like:
 
-- Adjust component positions
-- Add new mounting features
-- Create wire routing channels
-- Modify dimensions based on constraints
-- Add assembly features (clips, screw holes)
+> "Move the USB-C port 2mm higher"
+> "Increase the large button height to 50mm"
+> "Add a lanyard hole on the bottom left side"
 
-Example request:
-> "Move the button 10mm higher and add a wire channel connecting the battery to the XIAO board"
-
-Claude Code can read the current design, understand the spatial relationships, and make precise modifications to the Python script.
+The assistant can read the current `enclosure.py`, understand the parameter names, and apply the specific changes safely.
 
 ## Export Formats
 
 ### STL (`.stl`)
-- Standard 3D printing format
-- Import directly into your slicer (PrusaSlicer, Cura, etc.)
-- Units: millimeters
-
-### STEP (`.step`)
-- Universal CAD exchange format
-- Can be opened in Fusion 360, FreeCAD, SolidWorks, etc.
-- Preserves exact geometry
-- Useful for further refinement in traditional CAD
-
-## Next Steps
-
-Current design focuses on the main enclosure shell. Future additions:
-
-1. **Wire routing channels** - Grooves for organizing internal wiring
-2. **Assembly features** - Snap-fit clips or screw bosses for top/bottom caps
-3. **Component-specific holders** - Custom mounts for speaker, mic, amp
-4. **Strain relief** - Features to protect USB-C connection
-5. **Split design** - Separate top and bottom halves for easier printing and assembly
+- Standard 3D printing format.
+- Output includes `enclosure.stl` and `large_button.stl` as separate files for printing.
 
 ## Troubleshooting
 
 **Issue**: Model looks wrong in viewer
-- Check dimensions are in millimeters, not inches
-- Verify all positions are positive values
-- Check that cutouts don't extend beyond enclosure
+- Ensure you are viewing in Millimeters.
+- Check if the octagonal profile is generated correctly (8 points).
 
-**Issue**: 3D printer can't slice the file  
-- Try exporting again
-- Check STL file size isn't corrupted
-- Open in a CAD viewer to verify geometry
-
-**Issue**: Python errors when running script
-- Run `uv sync` to install/update dependencies
-- Use `uv run python cad/enclosure.py` to ensure correct environment
-- Check Python version is 3.10+ (`uv run python --version`)
-
-## Resources
-
-- [CadQuery Documentation](https://cadquery.readthedocs.io/)
-- [CadQuery Examples](https://github.com/CadQuery/cadquery/tree/master/examples)
-- [Parametric Design Patterns](https://cadquery.readthedocs.io/en/latest/examples.html)
+**Issue**: Python errors
+- Ensure dependencies are installed: `uv sync`
+- Check CadQuery version compatibility if moving between environments.
