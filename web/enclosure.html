@@ -115,9 +115,9 @@
             const loader = new STLLoader();
             loader.load('enclosure.stl', function (geometry) {
                 const material = new THREE.MeshPhongMaterial({
-                    color: 0x2194ce,
-                    specular: 0x111111,
-                    shininess: 50
+                    color: 0x4a4a4a,
+                    specular: 0x222222,
+                    shininess: 30
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);
