@@ -49,7 +49,7 @@
   - On front side, centered on a line running along the X axis 10mm from the top
   - Arranged horizontally in a line on the front side, 10mm from the top
   - 3mm LEDs
-  - Centered on the horizontal line, 8mm between the center of each LED
+  - The array of 3 LEDs is centered horizontally on the front face (so the middle LED is exactly on the center axis). Spacing is 8mm center-to-center.
 
 #### 1.2.2.2. Microphone Hole and Support
 
@@ -139,6 +139,13 @@ There needs to be support structure behind the hole, as described in the followi
 - **Size:** 9.5mm width × 3.7mm height (standard USB-C dimensions)
 - **Orientation:** Flat side (9.5mm width) oriented front-to-back (facing toward/away from power button)
 - **Surface thickness:** Ensure the enclosure wall thickness at the point of the cutout is exactly 1.6mm. If the rest of the enclosure is thicker (e.g., 3mm), create a recessed pocket on the exterior or interior so the effective thickness at the port is reduced to 1.6mm."
+
+---
+
+## 1.3. File Output ✅ REVIEWED
+- **Output Directory:** All generated STL and STEP files must be written to the `cad/output/` directory.
+- **Directory Creation:** The script should automatically ensure this directory exists before exporting.
+- **Gitignore:** This directory is gitignored to avoid tracking large binary model files.
 
 ---
 

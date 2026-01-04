@@ -1,858 +1,868 @@
-"""
-DevAIs Handheld AI Device - Enclosure Design
-=============================================
-
-This script generates the 3D model for the device enclosure using CadQuery.
-Components are positioned programmatically based on physical constraints.
-
-Target dimensions: 40mm octagonal × 150mm tall
-Octagon formed by chamfering a square at 45° with 7:3 ratio (long:short sides)
-"""
-
 import cadquery as cq
-from pathlib import Path
 import math
+from pathlib import Path
 
-# ============================================================================
-# DESIGN PARAMETERS
-# ============================================================================
+# --- Parameters ---
+# Dimensions
+DEVICE_WIDTH = 40.0  # Flat-to-flat distance
+DEVICE_HEIGHT = 150.0
+WALL_THICKNESS = 2.5 # General wall thickness
+USB_WALL_THICKNESS = 1.6
+FILLET_RADIUS = 4.0 # For vertical edges and top/bottom edges
 
-# Overall enclosure dimensions (mm)
-# Octagonal prism: 40mm flat-to-flat, 150mm height
-DEVICE_WIDTH = 40  # Flat-to-flat distance across opposite long sides
-DEVICE_HEIGHT = 150  # Length along Y axis
-WALL_THICKNESS = 1.6  # 1.6mm thickness for USB-C port compatibility
+# Calculated Dimensions
+# Ratio Long:Short = 7:3
+# See reasoning in thought trace
+# L = 140*sqrt(2) / (3 + 3.5*sqrt(2))
+LONG_SIDE_LENGTH = (140 * math.sqrt(2)) / (3 + 3.5 * math.sqrt(2))
+HALF_LONG_SIDE = LONG_SIDE_LENGTH / 2.0
+CORNER_COORD = DEVICE_WIDTH / 2.0
 
-# Octagon geometry (7:3 ratio for long sides:short chamfers)
-# Calculated from 40mm square with chamfered corners at 45°
-OCTAGON_SQUARE_SIDE = 40.0  # Original square before chamfering
-OCTAGON_CHAMFER_DIST = 7.55  # Distance cut off each corner
-OCTAGON_LONG_SIDE = OCTAGON_SQUARE_SIDE - 2 * OCTAGON_CHAMFER_DIST  # ≈24.9mm
-OCTAGON_SHORT_SIDE = OCTAGON_CHAMFER_DIST * math.sqrt(2)  # ≈10.7mm
-EDGE_FILLET_RADIUS = 4.0  # Fillet where octagon edges meet (beveled corners)
-TOP_BOTTOM_FILLET_RADIUS = 4.0  # Fillet on top/bottom edges
+# Components
+LED_DIAMETER = 3.0
+LED_SPACING = 8.0
+LED_TOP_OFFSET = 10.0
 
-# Component dimensions
-BATTERY_DIAMETER = 18.6
-BATTERY_LENGTH = 65
+MIC_HOLE_DIAMETER = 1.5
+MIC_BOTTOM_OFFSET = 10.0
+MIC_PORT_DIAMETER = 1.0 # Internal port
+MIC_POCKET_WIDTH = 4.72 + 0.2
+MIC_POCKET_HEIGHT = 3.76 + 0.2
+MIC_POCKET_DEPTH = 1.0 # Depth of pocket into the wall (from inside)
 
-XIAO_WIDTH = 21
-XIAO_DEPTH = 17.5
-XIAO_HEIGHT = 3.5
+SPEAKER_DIAMETER = LONG_SIDE_LENGTH * 0.8
+SPEAKER_TOP_OFFSET = LED_TOP_OFFSET + 10.0 # Upper edge 10mm below LEDs
 
-# Speaker (MAX98357A) - on front upper portion
-SPEAKER_DIAMETER = 0.8 * OCTAGON_LONG_SIDE  # 80% of long side ≈ 19.9mm
-SPEAKER_HEIGHT = 4
+POWER_BTN_DIAMETER = 8.0
+POWER_BTN_BOTTOM_OFFSET = 25.0
 
-# Microphone (INMP441) - on front bottom
-MIC_ACOUSTIC_HOLE_DIAMETER = 1.5  # Front-facing acoustic hole
-MIC_INTERNAL_PORT_DIAMETER = 1.0  # Internal port aligned with mic
-MIC_FOOTPRINT_LENGTH = 4.72 + 0.4  # Mic dimensions + tolerance
-MIC_FOOTPRINT_WIDTH = 3.76 + 0.4
-MIC_CLEARANCE_RADIUS = 2.0  # No obstructions within this radius of port
+USBC_WIDTH = 9.5
+USBC_HEIGHT = 3.7
+USBC_CORNER_RADIUS = 1.6
+USBC_BOTTOM_OFFSET = 12.0
 
-# Amplifier (MAX98357A)
-AMP_WIDTH = 16
-AMP_DEPTH = 16
-AMP_HEIGHT = 3
+LARGE_BTN_HEIGHT = 45.0
+LARGE_BTN_WIDTH = LONG_SIDE_LENGTH
+LARGE_BTN_CENTER_FROM_BOTTOM = 105.0
+LARGE_BTN_CORNER_RADIUS_BASE = 8.0
+LARGE_BTN_CORNER_RADIUS_TOP = 5.4
+LARGE_BTN_OPENING_RADIUS = 8.5
+LARGE_BTN_FRAME_WIDTH = 1.6
+LARGE_BTN_FRAME_PROTRUSION = 1.6 # Beyond outer surface
 
-# Power button - on right side
-POWER_BUTTON_DIAMETER = 8
-POWER_BUTTON_RING_WIDTH = 1.0  # Raised outer ring
+# --- Geometry Helpers ---
 
-# LEDs - on front top
-LED_DIAMETER = 3  # 3mm LEDs
-LED_SPACING = 8  # Center-to-center spacing
-
-# Large push-to-talk button (separate component) - on right side
-LARGE_BUTTON_WIDTH = OCTAGON_LONG_SIDE  # Full width of long side ≈ 24.9mm
-LARGE_BUTTON_HEIGHT = 0.30 * DEVICE_HEIGHT  # 30% of device height = 45mm
-LARGE_BUTTON_BASE_SECTION_DEPTH = 4  # Flat base section without bevel
-LARGE_BUTTON_BEVEL_DEPTH = 4  # Additional depth for beveled section
-LARGE_BUTTON_TOTAL_DEPTH = LARGE_BUTTON_BASE_SECTION_DEPTH + LARGE_BUTTON_BEVEL_DEPTH  # Total protrusion = 8mm
-LARGE_BUTTON_CORNER_FILLET = 3  # Rounded corners
-
-# Raised edge around large button - integrated into main body
-RAISED_EDGE_HEIGHT = 2.0  # Height of raised quarter-circle edge
-RAISED_EDGE_GAP = 0.25  # Gap between edge and button
-
-# USB-C port - on right side
-USBC_WIDTH = 9.5  # Width (front-to-back when on right face)
-USBC_HEIGHT = 3.7  # Height (up-down when on right face)
-USBC_CORNER_RADIUS = 1.6  # Corner radius for stadium shape
-
-# Component positioning (Y axis = length, Z axis = front/back, X axis = left/right)
-BATTERY_BOTTOM_OFFSET = 5
-XIAO_Y_OFFSET = BATTERY_BOTTOM_OFFSET + BATTERY_LENGTH + 5
-
-# Front side components (positions along Y axis, measured from bottom)
-LED_Y_POS = DEVICE_HEIGHT - 10  # 10mm from top
-MIC_Y_POS = 10  # 10mm from bottom
-SPEAKER_Y_POS = LED_Y_POS - 10 - SPEAKER_DIAMETER  # Upper edge 10mm below LEDs
-
-# Right side components (positions along Y axis, measured from bottom)
-POWER_BUTTON_Y_POS = 25  # 25mm from bottom
-USB_C_Y_POS = 12  # 12mm from bottom
-# Large button positioned at upper part: 15%-45% from top (22.5mm-67.5mm from top)
-LARGE_BUTTON_TOP_OFFSET = 0.15 * DEVICE_HEIGHT  # 15% from top = 22.5mm
-LARGE_BUTTON_Y_CENTER = DEVICE_HEIGHT - LARGE_BUTTON_TOP_OFFSET - LARGE_BUTTON_HEIGHT / 2  # Center at 105mm from bottom
-
-# Tolerances
-PRINT_TOLERANCE = 0.2
-PRESS_FIT_TOLERANCE = 0.1
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-def create_rounded_rect_wire(wp, width, height, radius):
-    """Create a rounded rectangle wire on the given workplane.
-
-    Args:
-        wp: CadQuery workplane to draw on
-        width: Rectangle width
-        height: Rectangle height
-        radius: Corner radius
-
-    Returns:
-        Workplane with the rounded rectangle wire
+def create_octagonal_prism(height, width, half_long_side, fillet_radius=0):
     """
-    # Calculate half dimensions
-    w = width / 2
-    h = height / 2
-    r = radius
-
-    # Create rounded rectangle using lines and tangent arcs
-    # Start from right side, go counter-clockwise
-    wire = (
-        wp
-        .moveTo(w, h - r)  # Right side, top corner
-        .radiusArc((w - r, h), -r)  # Arc to top side
-        .lineTo(-w + r, h)  # Top edge
-        .radiusArc((-w, h - r), -r)  # Arc to left side
-        .lineTo(-w, -h + r)  # Left edge
-        .radiusArc((-w + r, -h), -r)  # Arc to bottom side
-        .lineTo(w - r, -h)  # Bottom edge
-        .radiusArc((w, -h + r), -r)  # Arc to right side
-        .close()
-    )
-
-    return wire
-
-
-def create_octagon_profile():
-    """Create the octagon cross-section profile.
-
-    Returns a 2D octagon formed by chamfering a 40mm square at 45°.
-    The octagon has 4 long sides and 4 short chamfered sides with 7:3 ratio.
+    Creates an octagonal prism with specific dimensions.
+    width: Flat-to-flat distance (so max coord is width/2)
+    half_long_side: half length of the long side.
     """
-    half_square = OCTAGON_SQUARE_SIDE / 2
-    chamfer = OCTAGON_CHAMFER_DIST
-
-    # Define the 8 points of the octagon (clockwise from top-right)
-    # Using XY plane for cross-section
-    points = [
-        (half_square, half_square - chamfer),        # 1. Top of right long side
-        (half_square - chamfer, half_square),        # 2. Right end of top long side
-        (-(half_square - chamfer), half_square),     # 3. Left end of top long side
-        (-half_square, half_square - chamfer),       # 4. Top of left long side
-        (-half_square, -(half_square - chamfer)),    # 5. Bottom of left long side
-        (-(half_square - chamfer), -half_square),    # 6. Left end of bottom long side
-        (half_square - chamfer, -half_square),       # 7. Right end of bottom long side
-        (half_square, -(half_square - chamfer)),     # 8. Bottom of right long side
+    max_c = width / 2.0
+    h_l = half_long_side
+    
+    # Points for the octagon (counter-clockwise starting from right-top)
+    pts = [
+        (max_c, h_l),   # Right face, top corner
+        (h_l, max_c),   # Top face, right corner
+        (-h_l, max_c),  # Top face, left corner
+        (-max_c, h_l),  # Left face, top corner
+        (-max_c, -h_l), # Left face, bottom corner
+        (-h_l, -max_c), # Bottom face, left corner
+        (h_l, -max_c),  # Bottom face, right corner
+        (max_c, -h_l)   # Right face, bottom corner
     ]
+    
+    prism = cq.Workplane("XY").polyline(pts).close().extrude(height)
+    
+    if fillet_radius > 0:
+        prism = prism.edges("|Z").fillet(fillet_radius)
+        
+    return prism
 
-    # Create octagon profile (2D sketch)
-    octagon = (
-        cq.Workplane("XY")
-        .polyline(points)
-        .close()
-    )
-
-    return octagon
-
-
-def create_basic_enclosure():
-    """Create the basic octagonal prism enclosure shell with filleted edges.
-
-    Returns a hollow octagonal prism:
-    - 40mm flat-to-flat (across opposite long sides)
-    - 150mm height
-    - Filleted top and bottom edges
-    - Wall thickness: 2.5mm
-    """
-    # Create outer octagon and extrude to full height
-    enclosure = create_octagon_profile().extrude(DEVICE_HEIGHT)
-
-    # Add fillet to vertical edges where octagon sides meet
-    enclosure = enclosure.edges("|Z").fillet(EDGE_FILLET_RADIUS)
-
-    # Add fillet to top outer edge before hollowing
-    enclosure = enclosure.edges(">Z").fillet(TOP_BOTTOM_FILLET_RADIUS)
-
-    # Create inner octagon for hollowing (manually scaled down)
-    # Calculate inner dimensions
-    inner_square = OCTAGON_SQUARE_SIDE - 2 * WALL_THICKNESS
-    inner_chamfer = OCTAGON_CHAMFER_DIST - WALL_THICKNESS
-
-    inner_half = inner_square / 2
-
-    # Inner octagon points
-    inner_points = [
-        (inner_half, inner_half - inner_chamfer),
-        (inner_half - inner_chamfer, inner_half),
-        (-(inner_half - inner_chamfer), inner_half),
-        (-inner_half, inner_half - inner_chamfer),
-        (-inner_half, -(inner_half - inner_chamfer)),
-        (-(inner_half - inner_chamfer), -inner_half),
-        (inner_half - inner_chamfer, -inner_half),
-        (inner_half, -(inner_half - inner_chamfer)),
-    ]
-
-    # Hollow it out from the top
-    enclosure = (
-        enclosure
-        .faces(">Z")
-        .workplane()
-        .polyline(inner_points)
-        .close()
-        .cutThruAll()
-    )
-
-    # Note: Bottom edge fillet skipped for now due to complexity after hollowing
-    # TODO: Add bottom edge fillet using a different approach
-
-    return enclosure
-
-
-def add_battery_compartment(enclosure):
-    """Placeholder for 18650 battery mounting features.
-
-    Battery compartment design is deferred - the hollow interior provides
-    space for the battery (18650: 18.6mm diameter × 65mm length).
-    Interior space available: 35mm flat-to-flat octagon.
-    """
-    # Battery compartment features removed for now
-    # TODO: Design proper battery holder, contacts, and wire routing when needed
-
-    return enclosure
-
+# --- Feature Functions ---
 
 def add_led_holes(enclosure):
-    """Add three LED holes on front side, 10mm from top.
-
-    3mm LEDs arranged horizontally with 8mm center-to-center spacing.
-    Front face is at Y = +DEVICE_WIDTH/2, drill holes in -Y direction.
     """
-    led_radius = (LED_DIAMETER + PRINT_TOLERANCE) / 2
-
-    # Create three LED holes in a row
-    # Z position: 10mm from top = DEVICE_HEIGHT - 10
-    # X positions: centered at 0, offset by ±LED_SPACING
-    for x_offset in [-LED_SPACING, 0, LED_SPACING]:
-        led_hole = (
-            cq.Workplane("XZ")  # Work in XZ plane (front face view)
-            .workplane(offset=DEVICE_WIDTH / 2)  # Position at front face (Y = +half)
-            .center(x_offset, LED_Y_POS)  # Position in X and Z
-            .circle(led_radius)
-            .extrude(-WALL_THICKNESS - 1)  # Cut through wall in -Y direction
+    Front side (Y+), 10mm from top.
+    3x 3mm holes, 8mm spacing.
+    """
+    z_pos = DEVICE_HEIGHT - LED_TOP_OFFSET
+    
+    # Workplane on Front Face (XZ plane, offset by width/2)
+    # Note: center of workplane is (0, 0) relative to the face
+    # We map x_pos (left-right) to x and z_pos (height) to y in the workplane local coords?
+    # Let's be explicit with axes.
+    # Front face is at Y = +CORNER_COORD. Normal is +Y.
+    # X is X, Z is Y in local 2D.
+    
+    # Using the "correct approach" from spec
+    wp = (
+        cq.Workplane("XZ")
+        .workplane(offset=CORNER_COORD)
+    )
+    
+    for i in [-1, 0, 1]:
+        x_pos = i * LED_SPACING
+        hole = (
+            wp.center(x_pos, z_pos)
+            .circle(LED_DIAMETER / 2)
+            .extrude(-WALL_THICKNESS - 5) # Cut inwards (-Y)
         )
-        enclosure = enclosure.cut(led_hole)
-
+        enclosure = enclosure.cut(hole)
+        
     return enclosure
-
-
-def create_large_button():
-    """Create the large push-to-talk button as a separate component.
-
-    Features:
-    - Full width of long side (24.9mm) × 45mm height
-    - 4mm flat base section (no bevel)
-    - 45° bevel/taper on all four sides for outer 4mm section
-    - Total 8mm protrusion from body surface
-    - Rounded corners
-    - Dotted texture pattern on outer surface
-    """
-    # Button positioned on right side
-    # Create using loft with three profiles:
-    # 1. Base profile at enclosure surface (full size)
-    # 2. Mid profile at end of flat section (full size)
-    # 3. Outer profile at max protrusion (beveled on all sides)
-
-    # Base dimensions (full size)
-    base_width = LARGE_BUTTON_WIDTH
-    base_height = LARGE_BUTTON_HEIGHT
-
-    # Outer dimensions (beveled on all four sides)
-    # Since bevel is 45° and bevel section is 4mm deep, we lose 4mm on each side
-    # Width: loses 2*4mm = 8mm total (4mm from each side)
-    # Height: loses 2*4mm = 8mm total (4mm from top and bottom)
-    outer_width = max(base_width - 2 * LARGE_BUTTON_BEVEL_DEPTH * math.tan(math.radians(45)), 1)
-    outer_height = max(base_height - 2 * LARGE_BUTTON_BEVEL_DEPTH * math.tan(math.radians(45)), 1)
-
-    # Start position: right side of enclosure, centered vertically
-    start_y = LARGE_BUTTON_Y_CENTER - LARGE_BUTTON_HEIGHT / 2
-    base_z = DEVICE_WIDTH / 2  # Enclosure surface
-    base_corner_radius = 8.0  # 8mm corner radius at top of base
-
-    # Calculate proportional corner radius for the top of the button
-    # Scale according to the reduction in width due to beveling
-    outer_corner_radius = base_corner_radius * (outer_width / base_width)
-
-    # Create base section with rounded corners
-    base_section = (
-        cq.Workplane("XY")
-        .workplane(offset=base_z)
-        .center(0, start_y + base_height / 2)
-        .rect(base_width, base_height)
-        .extrude(LARGE_BUTTON_BASE_SECTION_DEPTH)
-    )
-
-    # Add fillets to the 4 corner edges of the base section
-    base_edges = base_section.edges().vals()
-    base_corner_length = LARGE_BUTTON_BASE_SECTION_DEPTH  # 4mm - the vertical corner edges
-    base_corner_edges = [e for e in base_edges if abs(e.Length() - base_corner_length) < 0.5]
-
-    for edge in base_corner_edges:
-        base_section = base_section.edges(cq.selectors.NearestToPointSelector(edge.Center())).fillet(base_corner_radius)
-
-    # Create beveled section with rounded corners that taper from 8mm to proportional size
-    # Use loft between two rounded rectangles to create linearly tapering corner radii
-
-    # Create bottom profile (full size with 8mm corner radius)
-    wp_bottom = cq.Workplane("XY").workplane(offset=base_z + LARGE_BUTTON_BASE_SECTION_DEPTH).center(0, start_y + base_height / 2)
-    bottom_profile = create_rounded_rect_wire(wp_bottom, base_width, base_height, base_corner_radius)
-
-    # Create top profile (smaller size with proportional corner radius) on the same workplane chain
-    top_profile = create_rounded_rect_wire(
-        bottom_profile.workplane(offset=LARGE_BUTTON_BEVEL_DEPTH),
-        outer_width,
-        outer_height,
-        outer_corner_radius
-    )
-
-    # Loft between the two profiles
-    beveled_section = top_profile.loft(combine=True)
-
-    # Combine base and beveled sections
-    button = base_section.union(beveled_section)
-
-    # Add raised bump texture pattern on outer surface
-    # Small hemispheric bumps arranged in a grid
-    bump_radius = 0.6  # Larger bumps for visibility
-    bump_spacing = 2.5  # Spacing between bump centers
-    bump_height = 0.5  # Height of raised bumps
-
-    grid_range_x = int(outer_width / 2 / bump_spacing)
-    grid_range_y = int(outer_height / 2 / bump_spacing)
-
-    # Outer surface is in XY plane at Z = base_z + total depth
-    outer_z = base_z + LARGE_BUTTON_TOTAL_DEPTH
-    outer_center_y = start_y + base_height / 2  # Same center as base
-
-    for x in range(-grid_range_x, grid_range_x + 1):
-        for y in range(-grid_range_y, grid_range_y + 1):
-            x_pos = x * bump_spacing
-            y_pos = y * bump_spacing
-
-            # Skip bumps in the rounded corner areas
-            # Check if bump is in a corner region (outside the rounded rectangle)
-            half_w = outer_width / 2
-            half_h = outer_height / 2
-
-            # For each corner, check if bump is in the cut-off area
-            skip = False
-            corners = [
-                (half_w, half_h),      # Top-right
-                (-half_w, half_h),     # Top-left
-                (half_w, -half_h),     # Bottom-right
-                (-half_w, -half_h),    # Bottom-left
-            ]
-
-            for cx, cy in corners:
-                # Distance from bump to corner center
-                corner_center_x = cx - (outer_corner_radius if cx > 0 else -outer_corner_radius)
-                corner_center_y = cy - (outer_corner_radius if cy > 0 else -outer_corner_radius)
-                dx = x_pos - corner_center_x
-                dy = y_pos - corner_center_y
-                dist = (dx**2 + dy**2)**0.5
-
-                # Check if in corner region (beyond straight edges)
-                in_corner_region = (abs(x_pos) > half_w - outer_corner_radius and
-                                   abs(y_pos) > half_h - outer_corner_radius)
-
-                # Skip if in corner region and outside the corner radius
-                if in_corner_region and dist > outer_corner_radius - bump_radius:
-                    skip = True
-                    break
-
-            if skip:
-                continue
-
-            # Create raised bump on outer surface (XY plane)
-            # Use a short cylinder or sphere segment
-            bump = (
-                cq.Workplane("XY")
-                .workplane(offset=outer_z)
-                .center(x_pos, outer_center_y + y_pos)
-                .circle(bump_radius)
-                .extrude(bump_height)
-            )
-            # Fillet the top edge to create rounded bump
-            bump = bump.faces(">Z").edges().fillet(bump_radius * 0.8)
-
-            button = button.union(bump)
-
-    return button
-
-
-def add_large_button_cutout(enclosure):
-    """Add opening in enclosure for the large button and raised edge.
-
-    Creates:
-    1. A rectangular opening on the right side for the button to protrude through
-    2. A 2mm raised edge (quarter-circle profile) around the opening with 0.25mm gap
-    """
-    # Opening dimensions (slightly larger than button base for clearance)
-    opening_clearance = 0.5
-    opening_width = LARGE_BUTTON_WIDTH + opening_clearance  # Width along Y axis (front-to-back)
-    opening_height = LARGE_BUTTON_HEIGHT + opening_clearance  # Height along Z axis (up-down)
-    opening_corner_radius = 8.0 + opening_clearance / 2  # 8mm button radius + clearance = 8.5mm
-
-    # Button is centered vertically (Z axis) and front-to-back (Y axis)
-    button_center_y = 0  # Centered front-to-back
-    button_center_z = LARGE_BUTTON_Y_CENTER  # Centered vertically = DEVICE_HEIGHT / 2
-
-    # Create rectangular opening on right side with rounded corners
-    # Right face is in the YZ plane at X = +DEVICE_WIDTH/2
-    # The outer surface is at the maximum X value of the octagon
-    # Calculate the exact outer surface position for the right face
-    outer_surface_x = OCTAGON_SQUARE_SIDE / 2  # Right side at X = 20mm
-
-    # Create workplane at the outer surface of the right face, centered at button position
-    wp_opening = (
-        cq.Workplane("YZ")  # Work in YZ plane (right face view)
-        .workplane(offset=outer_surface_x)  # Position at outer surface of right wall
-        .center(button_center_y, button_center_z)  # Center at button position (Y=0, Z=75mm)
-    )
-
-    # Create rounded rectangle wire and extrude inward through the wall
-    # Extrude in -X direction (inward) to cut through the wall thickness
-    button_opening_rounded = create_rounded_rect_wire(
-        wp_opening,
-        opening_width,
-        opening_height,
-        opening_corner_radius
-    ).extrude(-WALL_THICKNESS - 0.5)  # Extrude inward in -X direction through the wall
-
-    # Cut the opening from the enclosure
-    enclosure = enclosure.cut(button_opening_rounded)
-
-    # Add raised edge around the button
-    # Frame width matches wall thickness
-    # Height is doubled to allow for octagon cutting from bottom
-    # Start at outer surface to avoid overlapping with existing wall
-    edge_height = 2 * WALL_THICKNESS  # Total height: 3.2mm (will be cut to follow octagon)
-    edge_frame_width = WALL_THICKNESS  # Frame width: 1.6mm
-
-    # Create the raised edge as a frame around the button opening
-    # The inner cutout should match the opening size to avoid filling it in
-    edge_inner_width = opening_width  # Same as opening
-    edge_inner_height = opening_height  # Same as opening
-
-    # Create workplane for raised edge at inner surface, centered at button position
-    # Start from inner surface and extend outward through and beyond outer surface
-    wp_edge = (
-        cq.Workplane("YZ")
-        .workplane(offset=outer_surface_x - WALL_THICKNESS)  # At inner surface of right face
-        .center(button_center_y, button_center_z)  # Center at button position
-    )
-
-    # Create outer rectangle for the frame
-    edge_outer = create_rounded_rect_wire(
-        wp_edge,
-        edge_inner_width + 2 * edge_frame_width,
-        edge_inner_height + 2 * edge_frame_width,
-        opening_corner_radius + edge_frame_width
-    ).extrude(edge_height)  # Extrude outward in +X direction
-
-    # Create inner cutout (same size as opening to ensure it doesn't fill the hole)
-    edge_inner = create_rounded_rect_wire(
-        wp_edge,
-        edge_inner_width,
-        edge_inner_height,
-        opening_corner_radius
-    ).extrude(edge_height + 1)  # Extrude outward to cut through frame
-
-    # Subtract inner from outer to create frame
-    edge_frame = edge_outer.cut(edge_inner)
-
-    # TODO: Trim the raised edge to follow the enclosure's octagon profile
-    # Cut an octagon-shaped volume from the lower portion
-    # Temporarily disabled - need to fix the cutting geometry
-
-    # try:
-    #     octagon_cut_height = opening_height + 2 * edge_frame_width + 10
-    #
-    #     octagon_cutter = (
-    #         create_octagon_profile()
-    #         .extrude(octagon_cut_height)
-    #         .translate((0, 0, button_center_z - octagon_cut_height / 2))
-    #         .translate((outer_surface_x + WALL_THICKNESS, 0, 0))
-    #     )
-    #
-    #     edge_frame = edge_frame.cut(octagon_cutter)
-    # except Exception as e:
-    #     print(f"Warning: Failed to cut octagon from raised edge: {e}")
-
-    # Round the outer edge with quarter-circle profile
-    try:
-        # Fillet the outer edges to create rounded profile
-        # Use a small radius - larger radii create invalid geometry
-        fillet_radius = 0.3  # Small radius to avoid geometric conflicts
-        edge_frame = edge_frame.edges(">X").fillet(fillet_radius)
-    except Exception as e:
-        # If filleting fails, continue without it
-        print(f"  ⚠️  WARNING: Failed to fillet raised edge: {e}")
-
-    # Add the raised edge to the enclosure
-    try:
-        enclosure = enclosure.union(edge_frame)
-        if not enclosure.val().isValid():
-            print("  ⚠️  WARNING: Enclosure became invalid after adding raised edge!")
-    except Exception as e:
-        print(f"  ⚠️  WARNING: Failed to union raised edge: {e}")
-
-    return enclosure
-
-
-def add_speaker_grille(enclosure):
-    """Add speaker grille on front upper portion.
-
-    Circular grille with perforated pattern, diameter = 80% of long side width.
-    Upper edge positioned 10mm below the LED line.
-    Front face is at Y = +DEVICE_WIDTH/2, drill holes in -Y direction.
-    """
-    grille_radius = SPEAKER_DIAMETER / 2
-
-    # Add multiple small holes for speaker grille
-    hole_radius = 0.75
-    hole_spacing = 2.5
-
-    # Calculate grid range to cover speaker diameter
-    grid_range = int(grille_radius / hole_spacing) + 1
-
-    # Speaker center Z position (SPEAKER_Y_POS is the Y position in spec, but Z in our coordinate system)
-    speaker_center_z = SPEAKER_Y_POS
-
-    # Build holes in circular pattern on front face
-    for x_offset in range(-grid_range, grid_range + 1):
-        for z_offset in range(-grid_range, grid_range + 1):
-            x_pos = x_offset * hole_spacing
-            z_pos = z_offset * hole_spacing
-
-            # Only add holes within circular grille area
-            if (x_pos**2 + z_pos**2)**0.5 <= grille_radius:
-                hole = (
-                    cq.Workplane("XZ")  # Work in XZ plane (front face view)
-                    .workplane(offset=DEVICE_WIDTH / 2)  # Position at front face (Y = +half)
-                    .center(x_pos, speaker_center_z + z_pos)  # Position in X and Z
-                    .circle(hole_radius)
-                    .extrude(-WALL_THICKNESS - 1)  # Cut through wall in -Y direction
-                )
-                enclosure = enclosure.cut(hole)
-
-    return enclosure
-
 
 def add_mic_hole_and_mount(enclosure):
-    """Add microphone acoustic hole and internal INMP441 mounting structure.
-
-    - 1.5mm acoustic hole on front face, 10mm from bottom
-    - Internal mounting pocket for INMP441 breakout board
-    - 1.0mm internal port aligned with microphone
-    - Clearance for acoustic path
-    Front face is at Y = +DEVICE_WIDTH/2, drill holes in -Y direction.
     """
-    # Front-facing acoustic hole (1.5mm)
-    # MIC_Y_POS is the Y position in spec, but Z in our coordinate system
-    acoustic_hole = (
-        cq.Workplane("XZ")  # Work in XZ plane (front face view)
-        .workplane(offset=DEVICE_WIDTH / 2)  # Position at front face (Y = +half)
-        .center(0, MIC_Y_POS)  # Position in X and Z
-        .circle(MIC_ACOUSTIC_HOLE_DIAMETER / 2)
-        .extrude(-WALL_THICKNESS - 1)  # Cut through wall in -Y direction
+    Front side (Y+), 10mm from bottom.
+    Includes acoustic hole and internal mounting pocket.
+    """
+    z_pos = MIC_BOTTOM_OFFSET
+    
+    # 1. External Acoustic Hole
+    wp = (
+        cq.Workplane("XZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
     )
+    
+    acoustic_hole = wp.circle(MIC_HOLE_DIAMETER / 2).extrude(-WALL_THICKNESS - 5)
     enclosure = enclosure.cut(acoustic_hole)
-
-    # Internal mounting pocket for INMP441
-    # Create a small rectangular pocket just inside the front wall
-    mic_pocket = (
-        cq.Workplane("XZ")  # Work in XZ plane (front face view)
-        .workplane(offset=DEVICE_WIDTH / 2 - WALL_THICKNESS - 1)  # Inside front wall
-        .center(0, MIC_Y_POS)  # Position in X and Z
-        .rect(MIC_FOOTPRINT_LENGTH, MIC_FOOTPRINT_WIDTH)
-        .extrude(-2)  # 2mm deep pocket in -Y direction
+    
+    # 2. Internal Mounting Structure
+    # We need a pocket on the *inside* face.
+    # Inside face is at Y = CORNER_COORD - WALL_THICKNESS
+    # We want to add material or cut?
+    # The wall is 2.5mm thick.
+    # The mic needs a pocket. 
+    # If we assume we attach the board to the flat inner wall.
+    # Spec: "Support structure behind the hole... Mounting Footprint: 4.72mm x 3.76mm pocket or platform"
+    # "Create a ... pocket or platform"
+    # Since the wall is flat there (it's the long side), we can just make a small raised platform 
+    # or a recessed pocket if the wall is thick enough.
+    # Let's create a small platform to ensure flatness and correct distance.
+    # Actually, the octagon interior is flat on the long sides.
+    # So we just need to ensure the hole is clear.
+    # But maybe we need a recess to hold the board in place?
+    # Let's make a small rectangular frame/guide for the mic board.
+    
+    # Let's add a small raised rim around the mic hole on the inside to seat the mic?
+    # Or just a rectangular recess.
+    # Let's cut a shallow pocket into the inner wall to seat the mic component, 
+    # ensuring the acoustic path is clear.
+    
+    # Inner face Y location:
+    inner_y = CORNER_COORD - WALL_THICKNESS
+    
+    # Pocket for the mic board
+    # We will cut into the wall from the inside.
+    # Pocket dimensions: MIC_POCKET_WIDTH x MIC_POCKET_HEIGHT
+    
+    pocket = (
+        cq.Workplane("XZ")
+        .workplane(offset=inner_y)
+        .center(0, z_pos)
+        .rect(MIC_POCKET_WIDTH, MIC_POCKET_HEIGHT)
+        .extrude(0.5) # Cut 0.5mm into the wall (outwards +Y)
     )
-    enclosure = enclosure.cut(mic_pocket)
-
-    # Internal acoustic port (1.0mm) aligned with microphone
-    # This ensures sound can reach the bottom-ported INMP441
-    internal_port = (
-        cq.Workplane("XZ")  # Work in XZ plane (front face view)
-        .workplane(offset=DEVICE_WIDTH / 2 - WALL_THICKNESS)  # Just inside wall
-        .center(0, MIC_Y_POS)  # Position in X and Z
-        .circle(MIC_INTERNAL_PORT_DIAMETER / 2)
-        .extrude(-MIC_CLEARANCE_RADIUS - 2)  # Extend into enclosure for clearance in -Y
-    )
-    enclosure = enclosure.cut(internal_port)
-
+    
+    enclosure = enclosure.cut(pocket)
+    
     return enclosure
 
+def add_speaker_grille(enclosure):
+    """
+    Front side (Y+).
+    Upper edge 10mm below LEDs.
+    Diameter 80% of long side.
+    """
+    # LEDs are at DEVICE_HEIGHT - 10.
+    # Speaker top edge at DEVICE_HEIGHT - 10 - 10 = DEVICE_HEIGHT - 20.
+    # Radius = SPEAKER_DIAMETER / 2
+    # Center Z = Top Edge Z - Radius
+    z_pos = (DEVICE_HEIGHT - 20.0) - (SPEAKER_DIAMETER / 2.0)
+    
+    wp = (
+        cq.Workplane("XZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
+    )
+    
+    # Create main cutout (the hole through the case)
+    # Spec says "Mesh/perforated with many small holes".
+    # Instead of one big hole, let's make a pattern of small holes.
+    
+    hole_dia = 1.5
+    spacing = 2.5
+    
+    # Generate grid of points within the circle
+    pts = []
+    r_sq = (SPEAKER_DIAMETER / 2.0 - 1.0) ** 2 # Keep within boundary
+    
+    # Simple grid scan
+    num_points = int(SPEAKER_DIAMETER / spacing) + 2
+    start = -(num_points * spacing) / 2
+    
+    for i in range(num_points):
+        x = start + i * spacing
+        for j in range(num_points):
+            y = start + j * spacing
+            if x*x + y*y <= r_sq:
+                pts.append((x, y))
+    
+    if pts:
+        holes = (
+            wp.pushPoints(pts)
+            .circle(hole_dia / 2)
+            .extrude(-WALL_THICKNESS - 5)
+        )
+        enclosure = enclosure.cut(holes)
+        
+    return enclosure
 
 def add_power_button(enclosure):
-    """Add power button cutout on right side with concentric ring design.
-
-    8mm diameter button, 25mm from bottom, with raised outer ring.
-    Right face is at X = +DEVICE_WIDTH/2, drill holes in -X direction.
     """
-    button_radius = (POWER_BUTTON_DIAMETER + PRINT_TOLERANCE) / 2
-
-    # Main button cutout on right side
-    # Right side is at +X = +DEVICE_WIDTH/2
-    # POWER_BUTTON_Y_POS is the Y position in spec, but Z in our coordinate system
-    button_hole = (
-        cq.Workplane("YZ")  # Work in YZ plane (right face view)
-        .workplane(offset=DEVICE_WIDTH / 2)  # Position at right face (X = +half)
-        .center(0, POWER_BUTTON_Y_POS)  # Position in Y and Z
-        .circle(button_radius)
-        .extrude(-WALL_THICKNESS - 1)  # Cut through wall in -X direction
+    Right side (X+), 25mm from bottom.
+    8mm diameter.
+    """
+    z_pos = POWER_BTN_BOTTOM_OFFSET
+    
+    # Right face is X = +CORNER_COORD. Normal is +X.
+    # Workplane YZ.
+    
+    wp = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos) # Y=0 (center of side), Z=z_pos
     )
-    enclosure = enclosure.cut(button_hole)
-
-    # TODO: Add raised outer ring detail (could be added as a separate feature)
-    # For now, just the hole is sufficient for the basic model
-
+    
+    hole = wp.circle(POWER_BTN_DIAMETER / 2).extrude(-WALL_THICKNESS - 5)
+    enclosure = enclosure.cut(hole)
+    
+    # Concentric ring design - Raised outer ring
+    # "raised outer ring to prevent accidental power-off"
+    # Ring diameter say 10mm OD, 8mm ID.
+    # Height? Maybe 1mm protrusion.
+    
+    ring_od = POWER_BTN_DIAMETER + 3.0
+    ring_id = POWER_BTN_DIAMETER + 0.5 # Clearance
+    
+    ring = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
+        .circle(ring_od/2)
+        .circle(ring_id/2)
+        .extrude(1.0) # Stick out 1mm
+    )
+    
+    enclosure = enclosure.union(ring)
+    
     return enclosure
-
 
 def add_usbc_port(enclosure):
-    """Add USB-C charging port cutout on right side, 12mm from bottom.
-
-    Stadium-shaped (rounded rectangle) opening with 1.6mm corner radius.
-    Right face is at X = +DEVICE_WIDTH/2, drill holes in -X direction.
-    Oriented with flat side (9.5mm width) facing toward/away from power button.
-    Dimensions: 9.5mm width × 3.7mm height with 1.6mm corner radius.
     """
-    # Stadium-shaped cutout for USB-C on right side
-    # Right side is at +X = +DEVICE_WIDTH/2
-    # USB_C_Y_POS is the Y position in spec, but Z in our coordinate system
-    # Width (9.5mm) along Y axis (front-back), height (3.7mm) along Z axis (up-down)
-
-    # Create the rounded rectangle (stadium shape) by making a rectangle and filleting corners
-    usbc_cutout = (
-        cq.Workplane("YZ")  # Work in YZ plane (right face view)
-        .workplane(offset=DEVICE_WIDTH / 2)  # Position at right face (X = +half)
-        .center(0, USB_C_Y_POS)  # Position in Y and Z
-        .rect(USBC_WIDTH + PRINT_TOLERANCE, USBC_HEIGHT + PRINT_TOLERANCE)  # Width in Y (9.5mm), height in Z (3.7mm)
+    Right side (X+), 12mm from bottom.
+    9.5mm width x 3.7mm height.
+    Stadium shape.
+    """
+    z_pos = USBC_BOTTOM_OFFSET
+    
+    wp = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
     )
-
-    # Fillet the corners to create stadium shape
-    # Note: We need to extrude first to create a 3D object before filleting
-    usbc_cutout = usbc_cutout.extrude(-WALL_THICKNESS - 1)  # Cut through wall in -X direction
-
-    # Fillet all vertical edges (the corners of the stadium shape)
-    # Select edges parallel to X axis (the extrusion direction)
-    try:
-        usbc_cutout = usbc_cutout.edges("|X").fillet(USBC_CORNER_RADIUS)
-    except:
-        # If filleting fails, continue without it (better to have rectangular than no port)
-        pass
-
-    enclosure = enclosure.cut(usbc_cutout)
+    
+    # Create the cutout shape
+    # Rect with rounded corners
+    # Note: rect() creates a rectangle centered at (0,0)
+    # To get stadium shape, we can use 2 circles and a rect, or just rect with fillets.
+    # But CadQuery rect can't fillet 2D easily in one go? 
+    # Actually .rect().extrude().fillet() works on 3D.
+    # Or 2D .rect(..., centered=True) then fillet vertices?
+    # Let's use rect and fillet the 2D wire? No, simpler to fillet 3D or use union of shapes.
+    
+    # 2D stadium profile
+    # Width is along Y axis (front-to-back), Height along Z axis.
+    # But in YZ plane, Y is local x, Z is local y.
+    # So Width maps to local x.
+    
+    # Correct orientation: "Flat side (9.5mm width) oriented front-to-back"
+    # This means along Y axis of the device.
+    # In YZ plane, the horizontal axis is Y (device Y), vertical is Z (device Z).
+    # So rect width = 9.5, rect height = 3.7.
+    
+    cutout_solid = (
+        wp.rect(USBC_WIDTH, USBC_HEIGHT)
+        .extrude(-WALL_THICKNESS - 5)
+    )
+    
+    # Fillet the corners of the cutout solid?
+    # Hard to select specific edges of the negative volume.
+    # Better to construct the profile with rounded corners.
+    
+    # Let's do it manually with points or hull of circles.
+    
+    # Stadium shape: two circles separated by (width - height)
+    # Wait, width=9.5, height=3.7. Radius = 3.7/2 = 1.85.
+    # Separation = 9.5 - 3.7 = 5.8.
+    # This gives full round ends.
+    # Spec says "corner radius of 1.6mm".
+    # So it's a rounded rect, not a full stadium.
+    
+    # Re-make profile with rounded rect
+    # We can extrude a rect then fillet the edges of the solid that are parallel to extrusion?
+    # No, that's complex.
+    # Use 2D fillet.
+    
+    profile = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
+        .rect(USBC_WIDTH, USBC_HEIGHT)
+    )
+    
+    # Fillet 2D
+    # In CQ, you can fillet vertices of a pending wire.
+    # But usually easier to extrude then fillet.
+    # Let's try extruding a slightly larger rect then filleting?
+    # No, let's look up 2D fillet.
+    # `val().fillet2D(radius)` is available in newer CQ. 
+    # Assuming standard install, `rect` returns a Workplane.
+    
+    # Let's assume we can just extrude the rect and accept sharp corners for the cutout 
+    # OR apply fillet to the edges of the hole in the enclosure after cut?
+    # Applying fillets to the enclosure after cut is robust.
+    
+    # Let's try to make the shape correct in 2D first.
+    # Approximation: just a rect for now if 2D fillet is tricky, but we want high quality.
+    # Alternative: Use `polygon` or `hull`.
+    
+    # Let's use `rect` and then `fillet` on the generated solid before cutting?
+    # No, you can't fillet a "tool" solid easily if it's just a prism.
+    # Actually you can.
+    
+    tool = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
+        .rect(USBC_WIDTH, USBC_HEIGHT)
+        .extrude(-WALL_THICKNESS - 5)
+        .edges("|X") # Edges parallel to extrusion (X axis is normal to YZ)
+        .fillet(USBC_CORNER_RADIUS)
+    )
+    
+    enclosure = enclosure.cut(tool)
+    
+    # "Surface thickness: Ensure the enclosure wall thickness at the point of the cutout is exactly 1.6mm"
+    # If WALL_THICKNESS > 1.6, we need a pocket.
+    if WALL_THICKNESS > 1.6:
+        # Create a recessed pocket from the outside? Or inside?
+        # Usually from outside for connector clearance, or inside to thin the wall.
+        # "recessed pocket on the exterior or interior"
+        # Let's do exterior recess to make sure the plug fits.
+        # Recess size: slightly larger than port.
+        
+        pocket_depth = WALL_THICKNESS - 1.6
+        pocket_w = USBC_WIDTH + 4
+        pocket_h = USBC_HEIGHT + 4
+        
+        recess = (
+            cq.Workplane("YZ")
+            .workplane(offset=CORNER_COORD)
+            .center(0, z_pos)
+            .rect(pocket_w, pocket_h)
+            .extrude(-pocket_depth) # Cut into surface
+            .edges("|X")
+            .fillet(2.0)
+        )
+        enclosure = enclosure.cut(recess)
 
     return enclosure
 
-
-def create_component_mounts():
-    """Placeholder for PCB component mounting posts.
-
-    Component mounting features removed for now.
-    TODO: Design proper mounting solution for XIAO board and other components when needed.
+def add_large_button_feature(enclosure):
     """
-    # Return empty list - no mounting posts for now
-    return []
-
-
-# ============================================================================
-# PRINTABILITY VALIDATION
-# ============================================================================
-
-def check_printability(part, name):
-    """Check a part for common 3D printing issues.
-
-    Args:
-        part: CadQuery Workplane with the part to check
-        name: Name of the part for error reporting
+    Right side (X+).
+    Button opening and Raised Edge.
     """
-    print(f"\n=== Printability Check: {name} ===")
+    z_pos = LARGE_BTN_CENTER_FROM_BOTTOM
+    
+    # 1. Opening
+    # "Opening in enclosure... 8.5mm corner radius"
+    # "Width: Same as the width of a long side (~24.9mm)" ?
+    # Wait, the button is "Width: Same as the width of a long side".
+    # The opening should probably be slightly larger?
+    # "Opening... matching the 8mm button corner radius plus 0.5mm clearance"
+    # So Opening Size = Button Size + 1mm (0.5 on each side)?
+    # Spec says "Opening is cut through the wall... Opening for the button has rounded corners with 8.5mm radius"
+    # It doesn't explicitly say the opening width/height, but implies it matches the button + clearance.
+    
+    btn_w = LARGE_BTN_WIDTH
+    btn_h = LARGE_BTN_HEIGHT
+    
+    # Gap is 0.25mm? "2mm raised edge... 0.25mm gap"
+    # "Opening... matching the 8mm button corner radius plus 0.5mm clearance" -> this implies 0.5mm gap?
+    # Let's assume 0.5mm clearance total (0.25 per side) or 0.5mm gap (0.5 per side)?
+    # "8mm button corner radius plus 0.5mm clearance" -> 8.5mm radius.
+    # Usually clearance refers to gap on one side.
+    # Let's use 0.5mm gap per side.
+    
+    opening_w = btn_w + 1.0
+    opening_h = btn_h + 1.0
+    
+    # Create opening tool
+    opening_tool = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD)
+        .center(0, z_pos)
+        .rect(opening_w, opening_h)
+        .extrude(-WALL_THICKNESS - 5)
+        .edges("|X")
+        .fillet(LARGE_BTN_OPENING_RADIUS)
+    )
+    
+    enclosure = enclosure.cut(opening_tool)
+    
+    # 2. Raised Edge (Frame)
+    # "Frame width: 1.6mm"
+    # "Protrusion: Extends 1.6mm beyond the outer surface"
+    # "Height: 3.2mm (2x wall thickness)" -> This implies it goes from inner wall (-1.6mm relative to outer) to +1.6mm.
+    # Inner dimensions match opening.
+    
+    frame_inner_w = opening_w
+    frame_inner_h = opening_h
+    frame_outer_w = frame_inner_w + (2 * LARGE_BTN_FRAME_WIDTH)
+    frame_outer_h = frame_inner_h + (2 * LARGE_BTN_FRAME_WIDTH)
+    
+    # Frame shape
+    # We create a solid frame and union it.
+    # It needs to sit on the "Right Face" but extend inwards and outwards.
+    # Center of wall is at X = CORNER_COORD - (WALL_THICKNESS/2).
+    # Outer surface is X = CORNER_COORD.
+    # Inner surface is X = CORNER_COORD - WALL_THICKNESS.
+    
+    # The frame extends 1.6mm OUT from CORNER_COORD.
+    # And extends IN to... "extending from inner surface outward"
+    # If it starts at Inner Surface, it starts at (CORNER_COORD - WALL_THICKNESS).
+    # Length = 3.2mm.
+    # So it ends at (CORNER_COORD - WALL_THICKNESS) + 3.2.
+    # If WALL_THICKNESS is 2.5, then it ends at CORNER_COORD - 2.5 + 3.2 = CORNER_COORD + 0.7.
+    # But spec says "Protrusion: Extends 1.6mm beyond the outer surface".
+    # This implies the total Z-depth of the frame is (WALL_THICKNESS + 1.6).
+    # Spec says "Height: 3.2mm". This conflicts if Wall is 2.5.
+    # "Height: 3.2mm (2x wall thickness)". This suggests the author assumed Wall=1.6.
+    # Since we set WALL_THICKNESS=2.5, we should probably respect the "1.6mm protrusion" and "extends from inner surface" requirements.
+    # So Frame Depth = WALL_THICKNESS + 1.6 = 4.1mm.
+    
+    frame_depth = WALL_THICKNESS + LARGE_BTN_FRAME_PROTRUSION
+    
+    # We build the frame on the inner surface and extrude outwards.
+    frame = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD - WALL_THICKNESS)
+        .center(0, z_pos)
+        .rect(frame_outer_w, frame_outer_h)
+        .rect(frame_inner_w, frame_inner_h) # Cut inner rect (hollow)
+        .extrude(frame_depth) # Extrude outwards (+X)
+    )
+    
+    # Fillet outer edges of frame?
+    # "Rounding: 0.3mm fillet on outer edges"
+    # We need to select the edges at the very top (max X).
+    frame = frame.edges("|X").fillet(LARGE_BTN_OPENING_RADIUS + LARGE_BTN_FRAME_WIDTH) # Fillet corners of the rect
+    # This fillets the corners of the rounded rect profile (Z-Y plane corners).
+    # But wait, .rect() creates sharp corners.
+    # We need to round the corners of the frame profile to match the opening radius + frame width?
+    # Inner radius is 8.5. Outer radius should be 8.5 + 1.6 = 10.1.
+    
+    # Let's redo frame with rounded rects.
+    frame = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD - WALL_THICKNESS)
+        .center(0, z_pos)
+        # Outer wire
+        .rect(frame_outer_w, frame_outer_h)
+        # Inner wire
+        .rect(frame_inner_w, frame_inner_h)
+        .extrude(frame_depth)
+    )
+    
+    # Apply fillets to the corners (vertical edges in YZ plane, which are parallel to X)
+    # We have 4 inner corners and 4 outer corners.
+    # Inner corners radius: LARGE_BTN_OPENING_RADIUS (8.5)
+    # Outer corners radius: LARGE_BTN_OPENING_RADIUS + LARGE_BTN_FRAME_WIDTH (10.1)
+    
+    # It's tricky to select inner vs outer edges easily by string selector.
+    # Easier to make the shape with correct radii 2D if possible.
+    # But we can't make a face with two wires and extrude in standard CQ easily without `cut`.
+    # Let's make outer solid, cut inner solid.
+    
+    outer_solid = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD - WALL_THICKNESS)
+        .center(0, z_pos)
+        .rect(frame_outer_w, frame_outer_h)
+        .extrude(frame_depth)
+        .edges("|X")
+        .fillet(LARGE_BTN_OPENING_RADIUS + LARGE_BTN_FRAME_WIDTH)
+    )
+    
+    inner_cut = (
+        cq.Workplane("YZ")
+        .workplane(offset=CORNER_COORD - WALL_THICKNESS)
+        .center(0, z_pos)
+        .rect(frame_inner_w, frame_inner_h)
+        .extrude(frame_depth)
+        .edges("|X")
+        .fillet(LARGE_BTN_OPENING_RADIUS)
+    )
+    
+    frame = outer_solid.cut(inner_cut)
+    
+    # "Rounding: 0.3mm fillet on outer edges"
+    # This likely refers to the sharp edges on the front face of the frame (the face at max X).
+    # Select face at max X, then edges.
+    frame = frame.faces(">X").edges().fillet(0.3)
+    
+    enclosure = enclosure.union(frame)
+    
+    return enclosure
 
-    try:
-        # Get the solid from the workplane
-        solid = part.val()
-
-        # Check if it's a valid solid
-        if not solid.isValid():
-            print(f"❌ ERROR: {name} is not a valid solid!")
-            return False
-        else:
-            print(f"✓ {name} is a valid solid")
-
-        # Check for multiple disconnected solids
-        solids = part.solids().vals()
-        if len(solids) > 1:
-            print(f"⚠️  WARNING: {name} contains {len(solids)} separate solids - may have floating parts!")
-        else:
-            print(f"✓ {name} is a single connected solid")
-
-        # Get bounding box
-        bb = part.val().BoundingBox()
-        print(f"  Dimensions: {bb.xlen:.2f} × {bb.ylen:.2f} × {bb.zlen:.2f} mm")
-        print(f"  Volume: {solid.Volume():.2f} mm³")
-
-        # Sample the part at different Z heights to detect empty layers
-        print(f"  Z range: {bb.zmin:.2f} to {bb.zmax:.2f} mm")
-        print(f"  Checking for empty layers...")
-        z_min = bb.zmin
-        z_max = bb.zmax
-        layer_height = 0.2  # Typical layer height for 3D printing
-        num_samples = min(int((z_max - z_min) / layer_height), 100)  # Limit to 100 samples max
-
-        if num_samples < 2:
-            print(f"  ⚠️  Part too thin to sample ({(z_max - z_min):.2f}mm), skipping layer check")
-        else:
-            empty_layers = []
-            for i in range(1, num_samples):  # Skip first and last
-                z = z_min + i * layer_height
-                # Create a horizontal cutting plane at this Z height
-                try:
-                    # Use workplane to create section
-                    section = (cq.Workplane("XY")
-                              .workplane(offset=z)
-                              .add(part.val())
-                              .section())
-                    wires = section.wires().vals()
-                    if len(wires) == 0:
-                        empty_layers.append(z)
-                except Exception as e:
-                    # Section might fail if there's no intersection
-                    empty_layers.append(z)
-
-            if empty_layers:
-                empty_pct = (len(empty_layers) / num_samples) * 100
-                print(f"⚠️  WARNING: {len(empty_layers)}/{num_samples} layers empty ({empty_pct:.1f}%)")
-                if len(empty_layers) <= 5:
-                    print(f"  Empty at Z heights (mm): {[f'{z:.2f}' for z in empty_layers]}")
+def create_large_button():
+    """
+    The button itself.
+    """
+    # Dimensions
+    w = LARGE_BTN_WIDTH
+    h = LARGE_BTN_HEIGHT
+    depth_base = 4.0
+    depth_bevel = 4.0
+    total_depth = depth_base + depth_bevel
+    
+    # Corner radii
+    r_base = LARGE_BTN_CORNER_RADIUS_BASE
+    r_top = LARGE_BTN_CORNER_RADIUS_TOP
+    
+    # We construct this by lofting? Or extruding and chamfering?
+    # "Beveled section: 4mm depth with 45 deg bevel... on all four sides"
+    # This means the top face is smaller than the base.
+    # At 45 deg, if height is 4mm, the inset is 4mm on each side.
+    
+    # Base Section (Rectangular prism with rounded corners)
+    # Workplane XY (we'll rotate it later or just export as is)
+    
+    base = (
+        cq.Workplane("XY")
+        .rect(w, h)
+        .extrude(depth_base)
+        .edges("|Z")
+        .fillet(r_base)
+    )
+    
+    # Top Section (Beveled)
+    # Loft from Base Top Face to Top Face.
+    # Base Top Face size: w, h. Radius r_base.
+    # Top Face size: w - 2*4, h - 2*4. Radius r_top (5.4).
+    # Height: 4.0.
+    
+    # We can use `loft`.
+    # Create two wires.
+    
+    # Wire 1: Bottom of bevel (Top of base)
+    w1 = (
+        cq.Workplane("XY")
+        .workplane(offset=depth_base)
+        .rect(w, h)
+        .rect(w, h) # Dummy to make it a wire? No.
+    )
+    # How to fillet a 2D rect in place?
+    # .rect().extrude().fillet() is 3D.
+    # .rect(..., radius=?) isn't standard.
+    # Use polyline with arcs?
+    
+    # Let's use simple shapes and intersection/hull if needed.
+    # Or just construct the loft with rounded rectangles.
+    # Since I can't easily do rounded rect wires in one line without `rect(forConstruction=True)` tricks...
+    
+    # Alternative: Extrude the full shape and chamfer?
+    # Chamfering a rounded rect with variable radius (because corners are rounded) is complex.
+    # If we chamfer 4mm, the corner radius reduces by 4mm.
+    # 8mm radius - 4mm chamfer = 4mm radius.
+    # But spec says "transitions... to ~5.4mm".
+    # 8 - 4 = 4mm. 5.4mm is different.
+    # This implies it's not a pure 45 deg chamfer at the corners, or the "maintaining consistent proportions" logic dominates.
+    
+    # Let's use `loft`.
+    # We need to define the wires manually.
+    
+    def rounded_rect_wire(workplane, width, height, radius):
+        return (
+            workplane
+            .rect(width, height)
+            .extrude(0.001) # Tiny extrude to get edges
+            .edges("|Z")
+            .fillet(radius)
+            .wires().last() # Get the wire from the solid face? Tricky.
+        )
+        # Using `rect` generates a wire.
+        # But we can't fillet it easily.
+    
+    # Base part
+    button = cq.Workplane("XY").rect(w, h).extrude(depth_base).edges("|Z").fillet(r_base)
+    
+    # Bevel part (loft)
+    w_top = w - 8.0 # 4mm bevel on each side
+    h_top = h - 8.0
+    
+    # Get the wire from the top of the base
+    wire1 = button.faces(">Z").wires().toPending()
+    
+    # Create the second wire at total_depth
+    wire2_wp = cq.Workplane("XY").workplane(offset=total_depth).rect(w_top, h_top).extrude(0.001).edges("|Z").fillet(r_top)
+    wire2 = wire2_wp.faces(">Z").wires()
+    
+    # Combine and loft
+    bevel_section = cq.Workplane("XY").add(wire1.objects).add(wire2.objects).toPending().loft()
+    
+    button = button.union(bevel_section)
+    
+    # Texture: Dotted pattern on top surface
+    # "Top surface has a dotted pattern... Only bumps within the rounded rectangle boundary"
+    # Create bumps and union them.
+    
+    # Top surface is at Z = total_depth.
+    # Dimensions: w_top, h_top, r_top.
+    
+    bump_dia = 1.0
+    bump_height = 0.5
+    bump_spacing = 1.5
+    
+    # Generate bump positions
+    pts = []
+    # Check against rounded rect shape
+    # Simplest check: point must be within w_top/2, h_top/2 box AND
+    # if in corner zones, within radius.
+    
+    dx = w_top/2 - r_top
+    dy = h_top/2 - r_top
+    
+    # Grid
+    nx = int(w_top / bump_spacing)
+    ny = int(h_top / bump_spacing)
+    
+    for i in range(-nx, nx+1):
+        x = i * bump_spacing
+        for j in range(-ny, ny+1):
+            y = j * bump_spacing
+            
+            # Check boundaries
+            if abs(x) > w_top/2 or abs(y) > h_top/2:
+                continue
+                
+            # Check corners
+            in_corner = False
+            corner_center = (0,0)
+            
+            if x > dx and y > dy:
+                in_corner = True
+                corner_center = (dx, dy)
+            elif x < -dx and y > dy:
+                in_corner = True
+                corner_center = (-dx, dy)
+            elif x < -dx and y < -dy:
+                in_corner = True
+                corner_center = (-dx, -dy)
+            elif x > dx and y < -dy:
+                in_corner = True
+                corner_center = (dx, -dy)
+                
+            if in_corner:
+                # Check distance to corner center
+                dist = math.sqrt((x - corner_center[0])**2 + (y - corner_center[1])**2)
+                if dist > r_top - (bump_dia/2):
+                    continue
             else:
-                print(f"✓ No empty layers in {num_samples} samples")
+                # In the central cross area
+                pass
+            
+            pts.append((x, y))
+            
+    if pts:
+        bumps = (
+            cq.Workplane("XY")
+            .workplane(offset=total_depth)
+            .pushPoints(pts)
+            .circle(bump_dia/2)
+            .extrude(bump_height) # Add bumps
+        )
+        button = button.union(bumps)
+        
+    return button
 
-        # Check for thin walls
-        faces = part.faces().vals()
-        print(f"  Total faces: {len(faces)}")
+# --- Main Build ---
 
-        return True
-
-    except Exception as e:
-        print(f"❌ ERROR during printability check: {e}")
-        return False
-
-
-# ============================================================================
-# MAIN ASSEMBLY
-# ============================================================================
-
-def generate_enclosure():
-    """Generate complete octagonal enclosure with all features."""
-    print("Generating DevAIs octagonal enclosure...")
-
-    # Create base octagonal enclosure
-    enclosure = create_basic_enclosure()
-    print("  ✓ Octagonal enclosure base created")
-
-    # Battery compartment (placeholder for now)
-    enclosure = add_battery_compartment(enclosure)
-    print("  ✓ Battery compartment (hollow interior)")
-
-    # Add front face components
+def build_enclosure():
+    # 1. Base Shape: Octagonal Prism
+    enclosure = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
+    
+    # 2. Hollow it out
+    # To hollow, we can shell it?
+    # cq shell() works well.
+    # We want top and bottom to be closed?
+    # "Hollow out the interior"
+    # Usually an enclosure is a shell.
+    # Is it a tube or a cup?
+    # "Top edge... Bottom edge... rounded"
+    # It sounds like a closed volume that we hollow.
+    # But how do we put things in?
+    # Usually it's 2 parts or a cap.
+    # The spec doesn't mention a lid.
+    # "1.2.1 ... Front/back sides are separated along Z axis..."
+    # "Left/right sides are separated along X axis"
+    # This description is about orientation, not assembly.
+    # Let's assume for now it's a single unibody that we hollow out, 
+    # and maybe the bottom or top is open?
+    # Spec 2.1.1 "Hollow out the interior".
+    # Assuming it's printed as a tube or has a lid.
+    # Let's shell it with open top? Or just hollow inside.
+    # If we just shell(-thickness), it becomes a hollow solid with uniform walls.
+    # But we need an opening to insert components.
+    # Spec doesn't say where the opening is.
+    # Given "Stick shaped", usually end caps.
+    # I will shell it leaving the TOP open? Or Bottom?
+    # "USB-C... 12mm from bottom".
+    # "Mic... 10mm from bottom".
+    # "LEDs... 10mm from top".
+    # Maybe the ends are the caps?
+    # I will shell it and assume the user handles splitting or it's a slide-in.
+    # Since I'm making "enclosure.py", I'll produce the main body.
+    # I will make it open at the BOTTOM (Z=0) so it stands up?
+    # Or maybe it's 2 halves?
+    # "Front/back sides are separated along the Z axis" in the description usually implies a split line.
+    # But 1.2.1 says "The front/back sides are separated along the Z axis" refers to Coordinate System orientation logic?
+    # No, "Orientation: The enclosure runs length-wise along the Y axis... Front/back sides are separated along the Z axis".
+    # This was the *old* logic which I'm supposed to fix.
+    # New logic: Vertical is Z.
+    
+    # I will shell it with faces open?
+    # Let's assume a unibody for now, maybe with open ends.
+    # I'll create the hollow prism.
+    
+    # Create the solid
+    solid = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
+    
+    # Fillet top and bottom edges
+    # The vertical edges are already filleted by `create_octagonal_prism`.
+    # Now fillet the loops at Z=0 and Z=HEIGHT.
+    # Select edges.
+    solid = solid.edges("<Z or >Z").fillet(FILLET_RADIUS)
+    
+    # Shelling
+    # To have a constant wall thickness, use `shell`.
+    # A negative thickness hollows inwards.
+    # If we want an opening, we select faces to remove.
+    # Let's remove the bottom face to allow battery insertion?
+    # Selecting the bottom face might be tricky after fillet.
+    # It's the face at min Z.
+    
+    # shell() is computationally expensive and sometimes fails on complex fillets.
+    # Alternative: Create an inner solid (smaller) and cut it.
+    
+    inner_width = DEVICE_WIDTH - (2 * WALL_THICKNESS)
+    # Scale calculation for inner octagon
+    # We can just offset the profile?
+    # `2D offset` is better.
+    
+    # Re-create inner shape
+    # Profile offset -2.5mm
+    # To do this robustly:
+    # 1. Create base profile (wire)
+    # 2. Offset 2D wire inwards
+    # 3. Extrude
+    # 4. Cut from outer.
+    
+    # Outer solid (already made)
+    
+    # Inner solid
+    # We need the inner profile.
+    # The octagon profile function uses points.
+    # Calculating offset points for octagon is easy.
+    # Move each face in by thickness.
+    # Or just use `cq.Workplane("XY").polyline(pts).close().offset2D(-WALL_THICKNESS)`
+    
+    # Inner height:
+    # If we want a closed top and bottom?
+    # Or open bottom?
+    # Let's assume open bottom for assembly.
+    
+    h_inner = DEVICE_HEIGHT - WALL_THICKNESS # Solid top
+    
+    # Points again
+    max_c = DEVICE_WIDTH / 2.0
+    h_l = HALF_LONG_SIDE
+    pts = [
+        (max_c, h_l), (h_l, max_c), (-h_l, max_c), (-max_c, h_l),
+        (-max_c, -h_l), (-h_l, -max_c), (h_l, -max_c), (max_c, -h_l)
+    ]
+    
+    inner_solid = (
+        cq.Workplane("XY")
+        .polyline(pts).close()
+        .offset2D(-WALL_THICKNESS)
+        .extrude(h_inner) # Extrude from 0 to h_inner
+    )
+    
+    # Move inner solid up?
+    # If we want bottom open, inner solid starts at Z = -something to cut through bottom.
+    # And goes up to HEIGHT - WALL_THICKNESS.
+    
+    inner_solid = (
+        cq.Workplane("XY")
+        .workplane(offset=-1.0) # Start below bottom
+        .polyline(pts).close()
+        .offset2D(-WALL_THICKNESS)
+        .extrude(h_inner + 1.0) # Go up to match top thickness
+    )
+    
+    # Also need to fillet the inner top edges to match outer?
+    # If outer has 4mm radius, inner should have 4-2.5 = 1.5mm radius?
+    # Yes, to maintain constant wall.
+    inner_fillet = FILLET_RADIUS - WALL_THICKNESS
+    if inner_fillet > 0:
+        # Fillet inner top edges
+        inner_solid = inner_solid.edges(">Z").fillet(inner_fillet)
+        # Fillet vertical edges?
+        # Outer vertical edges are 4mm.
+        # Inner vertical edges should be 1.5mm.
+        inner_solid = inner_solid.edges("|Z").fillet(inner_fillet)
+    
+    enclosure = solid.cut(inner_solid)
+    
+    # 3. Add Features
     enclosure = add_led_holes(enclosure)
-    enclosure = add_speaker_grille(enclosure)
     enclosure = add_mic_hole_and_mount(enclosure)
-    print("  ✓ Front face components added")
-
-    # Add right side components
+    enclosure = add_speaker_grille(enclosure)
     enclosure = add_power_button(enclosure)
     enclosure = add_usbc_port(enclosure)
-    enclosure = add_large_button_cutout(enclosure)
-    print("  ✓ Right side components added")
-
-    # Create component mounting posts
-    mount_posts = create_component_mounts()
-    print("  ✓ Component mounts created")
-
-    # Combine all posts with enclosure
-    for post in mount_posts:
-        enclosure = enclosure.union(post)
-
-    # TODO: Add raised edge around large button (integrated into body)
-
+    enclosure = add_large_button_feature(enclosure)
+    
     return enclosure
 
-
-def export_models():
-    """Generate and export all models."""
-    output_dir = Path(__file__).parent / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    # Generate main enclosure
-    enclosure = generate_enclosure()
-
-    # Generate large button (separate component)
-    large_button = create_large_button()
-    print("  ✓ Large button component created")
-
-    # Run printability checks
-    print("\n" + "="*60)
-    print("PRINTABILITY VALIDATION")
-    print("="*60)
-    check_printability(enclosure, "Enclosure")
-    check_printability(large_button, "Large Button")
-    print("="*60 + "\n")
-
-    # Export enclosure as STL
-    stl_path = output_dir / "devais_enclosure.stl"
-    cq.exporters.export(enclosure, str(stl_path))
-    print(f"\n✓ Exported: {stl_path}")
-
-    # Export enclosure as STEP (for CAD compatibility)
-    step_path = output_dir / "devais_enclosure.step"
-    cq.exporters.export(enclosure, str(step_path))
-    print(f"✓ Exported: {step_path}")
-
-    # Export large button as STL
-    button_stl_path = output_dir / "devais_large_button.stl"
-    cq.exporters.export(large_button, str(button_stl_path))
-    print(f"✓ Exported: {button_stl_path}")
-
-    # Export large button as STEP
-    button_step_path = output_dir / "devais_large_button.step"
-    cq.exporters.export(large_button, str(button_step_path))
-    print(f"✓ Exported: {button_step_path}")
-
-    print("\nEnclosure generation complete!")
-    print(f"Dimensions: {DEVICE_WIDTH}mm octagonal × {DEVICE_HEIGHT}mm height")
-    print(f"Octagon geometry: {OCTAGON_LONG_SIDE:.1f}mm long sides, {OCTAGON_SHORT_SIDE:.1f}mm chamfers (7:3 ratio)")
-    print("Components: Main octagonal enclosure + Large button (separate)")
-
-
 if __name__ == "__main__":
-    export_models()
+    # Ensure output directory exists
+    output_dir = Path("cad/output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    print("Generating enclosure...")
+    enclosure = build_enclosure()
+    enclosure_path = output_dir / "enclosure.stl"
+    cq.exporters.export(enclosure, str(enclosure_path))
+    print(f"Exported {enclosure_path}")
+    
+    print("Generating large button...")
+    button = create_large_button()
+    button_path = output_dir / "large_button.stl"
+    cq.exporters.export(button, str(button_path))
+    print(f"Exported {button_path}")
