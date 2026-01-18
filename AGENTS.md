@@ -1,12 +1,10 @@
 # Devais Project Context
 
+ALWAYS READ `context/README.md` for an overview of task-specific instructions.
+
 ## Coding Agent Instructions
 
-**IMPORTANT:** When working with 3D models, CAD files, or CadQuery code in this project, consult the **CAD Modeller Skill** guide located at `docs/gemini_cad_skill.md`. This guide provides specialized CAD modeling capabilities and best practices for:
-- Creating or modifying CadQuery scripts
-- Generating 3D models for enclosures or components
-- Working with STL files
-- Design iterations of mechanical parts
+When working with 3D models, CAD files, or CadQuery code in this project, use the cad-moldeller-skill from .claude/skills/cad-modeller/:
 
 ## Project Purpose
 
