@@ -6,8 +6,7 @@ from pathlib import Path
 # Dimensions
 DEVICE_WIDTH = 40.0  # Flat-to-flat distance
 DEVICE_HEIGHT = 150.0
-WALL_THICKNESS = 2.5 # General wall thickness
-USB_WALL_THICKNESS = 1.6
+WALL_THICKNESS = 1.6  # Matches USB-C port spec (section 1.1.5)
 FILLET_RADIUS = 4.0 # For vertical edges and top/bottom edges
 
 # Calculated Dimensions
@@ -704,53 +703,7 @@ def create_large_button():
 # --- Main Build ---
 
 def build_enclosure():
-    # 1. Base Shape: Octagonal Prism
-    enclosure = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
-    
-    # 2. Hollow it out
-    # To hollow, we can shell it?
-    # cq shell() works well.
-    # We want top and bottom to be closed?
-    # "Hollow out the interior"
-    # Usually an enclosure is a shell.
-    # Is it a tube or a cup?
-    # "Top edge... Bottom edge... rounded"
-    # It sounds like a closed volume that we hollow.
-    # But how do we put things in?
-    # Usually it's 2 parts or a cap.
-    # The spec doesn't mention a lid.
-    # "1.2.1 ... Front/back sides are separated along Z axis..."
-    # "Left/right sides are separated along X axis"
-    # This description is about orientation, not assembly.
-    # Let's assume for now it's a single unibody that we hollow out, 
-    # and maybe the bottom or top is open?
-    # Spec 2.1.1 "Hollow out the interior".
-    # Assuming it's printed as a tube or has a lid.
-    # Let's shell it with open top? Or just hollow inside.
-    # If we just shell(-thickness), it becomes a hollow solid with uniform walls.
-    # But we need an opening to insert components.
-    # Spec doesn't say where the opening is.
-    # Given "Stick shaped", usually end caps.
-    # I will shell it leaving the TOP open? Or Bottom?
-    # "USB-C... 12mm from bottom".
-    # "Mic... 10mm from bottom".
-    # "LEDs... 10mm from top".
-    # Maybe the ends are the caps?
-    # I will shell it and assume the user handles splitting or it's a slide-in.
-    # Since I'm making "enclosure.py", I'll produce the main body.
-    # I will make it open at the BOTTOM (Z=0) so it stands up?
-    # Or maybe it's 2 halves?
-    # "Front/back sides are separated along the Z axis" in the description usually implies a split line.
-    # But 1.2.1 says "The front/back sides are separated along the Z axis" refers to Coordinate System orientation logic?
-    # No, "Orientation: The enclosure runs length-wise along the Y axis... Front/back sides are separated along the Z axis".
-    # This was the *old* logic which I'm supposed to fix.
-    # New logic: Vertical is Z.
-    
-    # I will shell it with faces open?
-    # Let's assume a unibody for now, maybe with open ends.
-    # I'll create the hollow prism.
-    
-    # Create the solid
+    # 1. Create outer solid octagonal prism
     solid = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
     
     # Fillet top and bottom edges
