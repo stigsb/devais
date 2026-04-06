@@ -45,11 +45,12 @@
 
 ### 1.2.2. Top Section of Front Side ✅ REVIEWED
 
-#### 1.2.2.1. Three small LEDs
-  - On front side, centered on a line running along the X axis 10mm from the top
-  - Arranged horizontally in a line on the front side, 10mm from the top
-  - 3mm LEDs
-  - The array of 3 LEDs is centered horizontally on the front face (so the middle LED is exactly on the center axis). Spacing is 8mm center-to-center.
+#### 1.2.2.1. Two RGB LEDs
+  - 2x WS2812B-2020 addressable RGB LEDs (2x2mm package) on small PCB
+  - On front side, 10mm from the top
+  - 3mm holes for light diffusion
+  - Positions: x=+5mm and x=+11mm (both on right/chassis half)
+  - Single data pin, daisy-chained; VDD switched via MOSFET for idle power savings
 
 #### 1.2.2.2. Microphone Hole and Support
 
@@ -415,39 +416,55 @@ cq.Workplane("XY")
 
 ## 3.4. Battery Compartment
 
-**Status:** Removed for now (hollow interior provides space)
-- Placeholder function exists in code
-- TODO: Design proper battery holder, contacts, and wire routing when needed
-- 18650 battery (18.6mm × 65mm) fits comfortably in 35mm interior space
+- 18650 battery (18.6mm × 65mm) held by half-cylinder cradle ribs on chassis (right) half
+- 3 ribs at Z positions near bottom, middle, and top of battery zone
+- Rib inner radius: 9.5mm (battery radius + 0.2mm clearance), thickness: 1.5mm
+- Cover half provides the other 180° containment when snapped on
+- Positive contact at top, negative spring at bottom interior of chassis half
+- Entire electrical path stays on chassis half — no cross-joint wiring
 
 ## 3.5. Split for 3D Printing
 
-The enclosure is split lengthwise at Y=0 into front and back halves for FDM printing.
+The enclosure is split lengthwise at X=0 into right (chassis) and left (cover) halves for FDM printing.
 
 ### 3.5.1. Why Split?
 - Printing a hollow octagonal tube upright produces excessive internal support material
 - Two half-shells print flat on the bed with no supports needed
+- All electronics mount on one half (chassis), making assembly and battery replacement easy
 
-### 3.5.2. Split Plane: Y=0
-- **Front half (Y>0):** LEDs, mic hole, speaker grille
-- **Back half (Y<0):** plain back panel
-- Right-side features (power button, USB-C, large button) are split symmetrically between halves — standard for two-piece enclosures
+### 3.5.2. Split Plane: X=0
+- **Right half (X>0) — Chassis:** Large button, power button, USB-C, LEDs, battery cradle, all electronics
+- **Left half (X<0) — Cover:** Purely mechanical shell, snaps onto chassis
+- Front-face features (speaker grille, mic) are split between halves at X=0
+- Mic hole shifted to x=+1mm so it's fully on the chassis half
 - Print each half with the outer flat face (long side) down on the bed
 
-### 3.5.3. Alignment Pins
-- 6 alignment pin locations, positioned at the center of left/right wall cross-sections (X = ±19.2mm)
-- Z positions: 35, 70, 135mm — chosen to avoid feature zones; Z=35 sits between USB-C (31mm) and power button (44mm)
-- **Pin dimensions:** 1.0mm diameter, 2mm tall — fits entirely within the 1.6mm wall thickness (0.3mm wall remaining on each side of the 1.3mm hole)
-- **Matching holes:** 1.3mm diameter (0.15mm per-side clearance), 2.5mm deep
-- **No separate bosses needed:** The wall cross-section itself acts as the socket, constraining the pin in X. Six pins at different Z positions collectively prevent Z-direction sliding.
-- **Invisible after assembly:** Pins and holes are fully contained within the wall thickness — nothing protrudes past the outer or inner wall surfaces
+### 3.5.3. Snap-Fit Joint System (No Glue)
+
+The two halves are held together by a tongue-and-groove + snap-clip system designed for repeated open/close during prototyping without glue. Enables battery replacement by popping the cover off.
+
+#### 3.5.3.1. Tongue-and-Groove Rails (Alignment)
+- Runs along full Z height (inset 5mm from top/bottom to clear fillet zones) on both front and back wall seams
+- **Tongue:** 1.0mm wide (Y) × 0.8mm protrusion (X), on cover (left) half split face, extends into chassis half
+- **Groove:** 1.3mm wide × 0.95mm deep, cut into chassis (right) half split face
+- 0.15mm per-side clearance for FDM tolerance
+- Provides lateral (Y) and radial (X) alignment
+
+#### 3.5.3.2. Cantilever Snap Clips (Retention)
+- 4 clips total: 2 on front wall, 2 on back wall, at Z = 45mm and Z = 135mm
+- Positioned at wall center (Y = ±19.2mm), avoiding feature zones
+- **Beam:** 8mm long (Z) × 3mm wide (Y) × 0.8mm thick (X), attached at top, free end at bottom
+- **Hook:** 0.4mm additional protrusion (X) at free end, 1.0mm tall (Z)
+- **Ramp:** 1.5mm rectangular lead-in above hook for easy assembly
+- **Pocket in chassis (right) half:** Shallow slot (beam-thickness deep) with deeper notch at hook zone
+- **Deflection safety:** 0.4mm undercut is ~40% of PLA max (1.0mm for 8mm beam), safe for repeated cycling
+- **Material note:** PETG recommended for best fatigue life (500+ cycles vs ~50 for PLA)
 
 ### 3.5.4. Implementation: Union Overlap Requirement
 CadQuery `.union()` creates a compound (multiple disconnected solids) instead of a single fused solid when operands only touch at a boundary without volumetric overlap. This breaks boolean splitting.
 
 **Fix applied:**
-- Lid receiver ring outer radius extended 0.5mm past the inner wall (`receiver_or + 0.5`)
-- Thread ridge profile base extended 0.3mm into the bore wall (`overlap=0.3` parameter)
+- Battery cradle rib half-rings overlap slightly with inner walls for solid union
 - Result: `build_enclosure()` returns a single solid that splits cleanly
 
 ### 3.5.5. XZ Workplane Normal Direction
