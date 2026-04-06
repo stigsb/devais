@@ -39,6 +39,15 @@ uv run pcb-build          # Shortcut: runs tsci build
 uv run pcb-export         # Build + export SVG/schematic/assembly/netlist
 ```
 
+### tscircuit Gotchas
+
+- **Autorouter choice matters:** `sequential-trace` struggles with dense packages (QFN16) on narrow boards. Use `auto-local` for boards with congestion — it routes across layers using vias. `auto-cloud` hangs (likely needs auth/interactive input).
+- **Direct component-to-component traces fail routing:** `from=".U1 > .PIN" to=".U2 > .PIN"` confuses the autorouter. Always route through named nets: `to="net.MY_NET"` on both sides.
+- **Use `connections` prop on dense chips:** Reduces trace object count and gives the autorouter better information. Combine with explicit `<trace>` elements only where needed.
+- **`pinAttributes` are broken (as of current tscircuit):** The camelCase props (`requiresPower`, `providesGround`, etc.) are accepted by TypeScript types but NOT serialized to circuit JSON `source_port` entries. Only `mustBeConnected` is mapped. DRC checks read circuit JSON, so pin attribute warnings cannot be suppressed. This is a tscircuit/core bug.
+- **Via proximity warnings are autorouter-generated:** Can't be fixed from source placement. Minor DRC issue, not a functional problem.
+- **Always regenerate assembly after build:** Run `uv run python3 hardware/pcb/generate_assembly.py` after every `npm run build` to keep assembly-top.svg/png in sync.
+
 ## Project Purpose
 
 Devais is a handheld AI assistant device designed to solve a fundamental UX problem with voice-activated AI: apps that respond to hesitation during speech. By implementing a push-to-talk interface (walkie-talkie style), users have intentional control over when the AI is listening and responding.

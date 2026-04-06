@@ -30,21 +30,43 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Python dependencies
         run: |
           uv sync
+
+      - name: Install PCB toolchain
+        run: |
+          npm install -g @tscircuit/cli
+          cd hardware/pcb && npm install
 
       - name: Generate enclosure STL
         run: |
           uv run python cad/enclosure.py
 
+      - name: Generate PCB artifacts
+        run: |
+          uv run pcb-export
+          uv run python3 hardware/pcb/generate_assembly.py
+
       - name: Create deployment directory
         run: |
           mkdir -p deploy
           cp cad/output/enclosure.stl deploy/
+          cp cad/output/enclosure_left.stl deploy/
+          cp cad/output/enclosure_right.stl deploy/
           cp cad/output/large_button.stl deploy/
+          cp hardware/pcb/index.circuit-pcb.svg deploy/
+          cp hardware/pcb/index.circuit-schematic.svg deploy/
+          cp hardware/pcb/assembly-top.svg deploy/
           cp web/index.html deploy/
           cp web/enclosure.html deploy/
+          cp web/enclosure_left.html deploy/
+          cp web/enclosure_right.html deploy/
           cp web/large_button.html deploy/
 
       - name: Deploy to GitHub Pages
