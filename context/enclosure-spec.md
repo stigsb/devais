@@ -120,7 +120,7 @@ There needs to be support structure behind the hole, as described in the followi
 - **Color:** Orange
 
 ### 1.2.4. Power Button ✅ REVIEWED
-- **Location:** Lower part of right side, 25mm from the bottom
+- **Location:** Lower part of right side, 44mm from the bottom
 - **Color:** Black
 - **Design:** Concentric ring design - has a raised outer ring to prevent accidental power-off
 - **Diameter:** 8mm
@@ -134,7 +134,7 @@ There needs to be support structure behind the hole, as described in the followi
 - **Position:** Upper edge of speaker grille should be 10mm below the horizontal line with LEDs
 
 ### 1.2.6. USB-C Port ✅ REVIEWED
-- **Location:** Lower part of right side, 12mm from the bottom
+- **Location:** Lower part of right side, 31mm from the bottom
 - **Shape:** Stadium-shaped (rounded rectangle) through-hole with a width of 9.5mm, a height of 3.7mm, and a corner radius of 1.6mm
 - **Size:** 9.5mm width × 3.7mm height (standard USB-C dimensions)
 - **Orientation:** Flat side (9.5mm width) oriented front-to-back (facing toward/away from power button)
@@ -190,8 +190,8 @@ There needs to be support structure behind the hole, as described in the followi
 | LEDs (3x 3mm) | Not implemented (commented out) | Front side, 10mm from top, 8mm spacing | Add function |
 | Mic (INMP441) | Front, 92% height (~138mm) | Front, 10mm from bottom | Move to bottom + add mounting structure |
 | Speaker Grille | Front, 28% (~42mm) | Front, upper part, 10mm below LEDs | Move to top |
-| Power Button | Front, 40% (~60mm) | RIGHT side, 25mm from bottom | Change side + reposition |
-| USB-C Port | Bottom/front, 5mm | RIGHT side, 12mm from bottom | Change side + reposition |
+| Power Button | Front, 40% (~60mm) | RIGHT side, 44mm from bottom | Change side + reposition |
+| USB-C Port | Bottom/front, 5mm | RIGHT side, 31mm from bottom | Change side + reposition |
 | Large Button | Right side, 60% (~90mm) | RIGHT side, centered, 30% height (45mm tall) | Adjust height and add bevel |
 
 ### 2.1.5. Large Button Redesign
@@ -404,7 +404,7 @@ cq.Workplane("XY")
 ### 3.3.2. Power Button
 - Circular, 8mm diameter
 - Concentric ring design (raised outer ring not yet implemented)
-- Position: 25mm from bottom (Z = 25)
+- Position: 44mm from bottom (Z = 44)
 
 ### 3.3.3. Large Button ✅ IMPLEMENTED
 - Rectangular with 45° taper and rounded corners (8mm radius transitioning to ~5.4mm)
@@ -419,3 +419,40 @@ cq.Workplane("XY")
 - Placeholder function exists in code
 - TODO: Design proper battery holder, contacts, and wire routing when needed
 - 18650 battery (18.6mm × 65mm) fits comfortably in 35mm interior space
+
+## 3.5. Split for 3D Printing
+
+The enclosure is split lengthwise at Y=0 into front and back halves for FDM printing.
+
+### 3.5.1. Why Split?
+- Printing a hollow octagonal tube upright produces excessive internal support material
+- Two half-shells print flat on the bed with no supports needed
+
+### 3.5.2. Split Plane: Y=0
+- **Front half (Y>0):** LEDs, mic hole, speaker grille
+- **Back half (Y<0):** plain back panel
+- Right-side features (power button, USB-C, large button) are split symmetrically between halves — standard for two-piece enclosures
+- Print each half with the outer flat face (long side) down on the bed
+
+### 3.5.3. Alignment Pins
+- 6 alignment pin locations, positioned at the center of left/right wall cross-sections (X = ±19.2mm)
+- Z positions: 35, 70, 135mm — chosen to avoid feature zones; Z=35 sits between USB-C (31mm) and power button (44mm)
+- **Pin dimensions:** 1.0mm diameter, 2mm tall — fits entirely within the 1.6mm wall thickness (0.3mm wall remaining on each side of the 1.3mm hole)
+- **Matching holes:** 1.3mm diameter (0.15mm per-side clearance), 2.5mm deep
+- **No separate bosses needed:** The wall cross-section itself acts as the socket, constraining the pin in X. Six pins at different Z positions collectively prevent Z-direction sliding.
+- **Invisible after assembly:** Pins and holes are fully contained within the wall thickness — nothing protrudes past the outer or inner wall surfaces
+
+### 3.5.4. Implementation: Union Overlap Requirement
+CadQuery `.union()` creates a compound (multiple disconnected solids) instead of a single fused solid when operands only touch at a boundary without volumetric overlap. This breaks boolean splitting.
+
+**Fix applied:**
+- Lid receiver ring outer radius extended 0.5mm past the inner wall (`receiver_or + 0.5`)
+- Thread ridge profile base extended 0.3mm into the bore wall (`overlap=0.3` parameter)
+- Result: `build_enclosure()` returns a single solid that splits cleanly
+
+### 3.5.5. XZ Workplane Normal Direction
+The `cq.Workplane("XZ")` normal is **-Y** (not +Y). This means:
+- `.extrude(positive)` goes in **-Y** direction
+- `.extrude(negative)` goes in **+Y** direction
+
+This is a common source of confusion when creating geometry on the XZ plane.

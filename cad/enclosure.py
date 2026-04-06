@@ -33,12 +33,12 @@ SPEAKER_DIAMETER = LONG_SIDE_LENGTH * 0.8
 SPEAKER_TOP_OFFSET = LED_TOP_OFFSET + 10.0 # Upper edge 10mm below LEDs
 
 POWER_BTN_DIAMETER = 8.0
-POWER_BTN_BOTTOM_OFFSET = 25.0
+POWER_BTN_BOTTOM_OFFSET = 44.0
 
 USBC_WIDTH = 9.5
 USBC_HEIGHT = 3.7
 USBC_CORNER_RADIUS = 1.6
-USBC_BOTTOM_OFFSET = 12.0
+USBC_BOTTOM_OFFSET = 31.0
 
 LARGE_BTN_HEIGHT = 45.0
 LARGE_BTN_WIDTH = LONG_SIDE_LENGTH
@@ -48,6 +48,35 @@ LARGE_BTN_CORNER_RADIUS_TOP = 5.4
 LARGE_BTN_OPENING_RADIUS = 8.5
 LARGE_BTN_FRAME_WIDTH = 1.6
 LARGE_BTN_FRAME_PROTRUSION = 1.6 # Beyond outer surface
+
+# Bottom Lid
+LID_THREAD_BORE = 33.0        # Internal thread major diameter (bore)
+LID_THREAD_PITCH = 3.0        # Coarse pitch for FDM printing
+LID_THREAD_DEPTH = 1.0        # Thread ridge depth
+LID_THREAD_TURNS = 2.5
+LID_THREAD_HEIGHT = LID_THREAD_PITCH * LID_THREAD_TURNS  # 7.5mm
+LID_THREAD_CLEARANCE = 0.3    # Per-side clearance for printing
+
+LID_RECEIVER_BOTTOM_Z = 2.0   # Start above bottom to clear outer fillet
+LID_RECEIVER_HEIGHT = 10.0
+
+LID_DISC_DIAMETER = 36.0      # Round lid filling most of octagonal opening
+LID_DISC_THICKNESS = 2.5
+LID_BOSS_OD = LID_THREAD_BORE - 2 * LID_THREAD_DEPTH - 2 * LID_THREAD_CLEARANCE
+LID_BOSS_HEIGHT = LID_THREAD_HEIGHT
+
+COIN_SLOT_WIDTH = 2.5         # Wide enough for coin edge
+COIN_SLOT_DEPTH = 1.2
+COIN_SLOT_LENGTH = 22.0
+
+# Alignment Pins (for split halves)
+# Pins must fit within wall thickness (1.6mm) so they're invisible after assembly.
+# The wall cross-section acts as the socket — no separate bosses needed.
+PIN_DIAMETER = 1.0            # Thin enough to leave wall material around hole
+PIN_HEIGHT = 2.0
+PIN_CLEARANCE = 0.15          # Per side, tight fit for alignment
+HOLE_DIAMETER = PIN_DIAMETER + 2 * PIN_CLEARANCE  # 1.3mm — leaves 0.15mm wall on each side
+HOLE_DEPTH = 2.5
 
 # --- Geometry Helpers ---
 
@@ -76,8 +105,45 @@ def create_octagonal_prism(height, width, half_long_side, fillet_radius=0):
     
     if fillet_radius > 0:
         prism = prism.edges("|Z").fillet(fillet_radius)
-        
+
     return prism
+
+def create_thread_ridge(surface_radius, pitch, height, depth, start_z=0.0, internal=True, overlap=0.0):
+    """
+    Create a helical thread ridge by sweeping a triangular profile along a helix.
+
+    surface_radius: radius of the cylindrical surface where thread sits
+    pitch: thread pitch in mm
+    height: total thread engagement height
+    depth: how far the ridge extends from the surface
+    start_z: Z position where thread begins
+    internal: True = ridge extends inward (bore), False = outward (boss)
+    """
+    helix = cq.Wire.makeHelix(
+        pitch, height, surface_radius,
+        center=cq.Vector(0, 0, start_z)
+    )
+
+    half_p = pitch * 0.3  # Thread flank half-width
+
+    if internal:
+        profile = (
+            cq.Workplane("XZ")
+            .moveTo(surface_radius + overlap, start_z - half_p)
+            .lineTo(surface_radius - depth, start_z)
+            .lineTo(surface_radius + overlap, start_z + half_p)
+            .close()
+        )
+    else:
+        profile = (
+            cq.Workplane("XZ")
+            .moveTo(surface_radius - overlap, start_z - half_p)
+            .lineTo(surface_radius + depth, start_z)
+            .lineTo(surface_radius - overlap, start_z + half_p)
+            .close()
+        )
+
+    return profile.sweep(helix, isFrenet=True)
 
 # --- Feature Functions ---
 
@@ -222,7 +288,7 @@ def add_speaker_grille(enclosure):
 
 def add_power_button(enclosure):
     """
-    Right side (X+), 25mm from bottom.
+    Right side (X+), 44mm from bottom.
     8mm diameter.
     """
     z_pos = POWER_BTN_BOTTOM_OFFSET
@@ -697,8 +763,123 @@ def create_large_button():
             .extrude(bump_height) # Add bumps
         )
         button = button.union(bumps)
-        
+
     return button
+
+def add_lid_receiver(enclosure):
+    """
+    Add cylindrical thread receiver ring inside enclosure bottom.
+    Bridges from octagonal inner walls to a circular threaded bore.
+    """
+    bore_radius = LID_THREAD_BORE / 2.0
+    inner_flat = DEVICE_WIDTH - 2 * WALL_THICKNESS
+    receiver_or = inner_flat / 2.0 + 0.5  # overlap with inner wall for solid union
+
+    # Solid ring with central bore
+    ring = (
+        cq.Workplane("XY")
+        .workplane(offset=LID_RECEIVER_BOTTOM_Z)
+        .circle(receiver_or)
+        .circle(bore_radius)
+        .extrude(LID_RECEIVER_HEIGHT)
+    )
+    enclosure = enclosure.union(ring)
+
+    # Internal thread ridge
+    thread_start = LID_RECEIVER_BOTTOM_Z + 1.0  # 1mm lead-in
+    thread = create_thread_ridge(
+        bore_radius, LID_THREAD_PITCH, LID_THREAD_HEIGHT,
+        LID_THREAD_DEPTH, start_z=thread_start, internal=True, overlap=0.3
+    )
+    enclosure = enclosure.union(thread)
+
+    return enclosure
+
+def create_bottom_lid():
+    """
+    Screw-in bottom lid with coin slot.
+    Disc covers the bottom opening; threaded boss screws into receiver.
+    """
+    # Disc
+    lid = (
+        cq.Workplane("XY")
+        .circle(LID_DISC_DIAMETER / 2.0)
+        .extrude(LID_DISC_THICKNESS)
+    )
+
+    # Threaded boss on top of disc
+    boss = (
+        cq.Workplane("XY")
+        .workplane(offset=LID_DISC_THICKNESS)
+        .circle(LID_BOSS_OD / 2.0)
+        .extrude(LID_BOSS_HEIGHT)
+    )
+    lid = lid.union(boss)
+
+    # External thread on boss
+    thread = create_thread_ridge(
+        LID_BOSS_OD / 2.0, LID_THREAD_PITCH, LID_THREAD_HEIGHT,
+        LID_THREAD_DEPTH, start_z=LID_DISC_THICKNESS, internal=False
+    )
+    lid = lid.union(thread)
+
+    # Coin slot groove on bottom face
+    slot = (
+        cq.Workplane("XY")
+        .rect(COIN_SLOT_LENGTH, COIN_SLOT_WIDTH)
+        .extrude(COIN_SLOT_DEPTH)
+    )
+    lid = lid.cut(slot)
+
+    # Chamfer top edge of boss for easier thread engagement
+    try:
+        lid = lid.faces(">Z").edges("%Circle").chamfer(0.5)
+    except Exception:
+        pass
+
+    return lid
+
+# --- Split for Printing ---
+
+def split_enclosure(enclosure):
+    """
+    Split enclosure into front and back halves along Y=0 for 3D printing.
+    Front half (Y>0): LEDs, mic, speaker grille
+    Back half (Y<0): plain back
+    Print each half with the outer flat face down on the print bed.
+    Alignment pins on back half mate with holes in front half.
+    """
+    # Cutting half-spaces (XY workplane: normal is +Z, unambiguous positioning)
+    s = 300
+    pos_y_tool = cq.Workplane("XY").transformed(offset=(0, s/2, s/2 - 50)).box(s, s, s)
+    neg_y_tool = cq.Workplane("XY").transformed(offset=(0, -s/2, s/2 - 50)).box(s, s, s)
+
+    front_half = enclosure.cut(neg_y_tool)  # remove Y<0 → keep Y>0
+    back_half = enclosure.cut(pos_y_tool)   # remove Y>0 → keep Y<0
+
+    # Pin positions (X, Z) on the Y=0 split face.
+    # Placed at center of left/right wall cross-sections,
+    # avoiding feature zones (USB-C Z=31, power btn Z=44, large btn Z=83-130).
+    wall_cx = CORNER_COORD - WALL_THICKNESS / 2
+    pin_positions = [
+        (wall_cx, 35), (wall_cx, 70), (wall_cx, 135),
+        (-wall_cx, 35), (-wall_cx, 70), (-wall_cx, 135),
+    ]
+
+    # XZ workplane normal is -Y, so extrude(-d) goes in +Y direction.
+    # Pins are 1.0mm diameter in a 1.6mm wall — the wall itself acts as the socket,
+    # constraining the pin in X. Six pins at different Z positions collectively
+    # prevent any Z-direction sliding.
+    for x, z in pin_positions:
+        # Pin: cylinder from Y=0 extending into front half (+Y)
+        pin = cq.Workplane("XZ").center(x, z).circle(PIN_DIAMETER / 2).extrude(-PIN_HEIGHT)
+        back_half = back_half.union(pin)
+
+        # Matching hole in front half
+        hole = cq.Workplane("XZ").center(x, z).circle(HOLE_DIAMETER / 2).extrude(-HOLE_DEPTH)
+        front_half = front_half.cut(hole)
+
+    return front_half, back_half
 
 # --- Main Build ---
 
@@ -800,22 +981,33 @@ def build_enclosure():
     enclosure = add_power_button(enclosure)
     enclosure = add_usbc_port(enclosure)
     enclosure = add_large_button_feature(enclosure)
-    
+    enclosure = add_lid_receiver(enclosure)
+
     return enclosure
 
 if __name__ == "__main__":
     # Ensure output directory exists
     output_dir = Path("cad/output")
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print("Generating enclosure...")
     enclosure = build_enclosure()
-    enclosure_path = output_dir / "enclosure.stl"
-    cq.exporters.export(enclosure, str(enclosure_path))
-    print(f"Exported {enclosure_path}")
-    
+    cq.exporters.export(enclosure, str(output_dir / "enclosure.stl"))
+    print("Exported enclosure.stl")
+
+    print("Splitting enclosure for printing...")
+    front_half, back_half = split_enclosure(enclosure)
+    cq.exporters.export(front_half, str(output_dir / "enclosure_front.stl"))
+    print("Exported enclosure_front.stl")
+    cq.exporters.export(back_half, str(output_dir / "enclosure_back.stl"))
+    print("Exported enclosure_back.stl")
+
     print("Generating large button...")
     button = create_large_button()
-    button_path = output_dir / "large_button.stl"
-    cq.exporters.export(button, str(button_path))
-    print(f"Exported {button_path}")
+    cq.exporters.export(button, str(output_dir / "large_button.stl"))
+    print("Exported large_button.stl")
+
+    print("Generating bottom lid...")
+    lid = create_bottom_lid()
+    cq.exporters.export(lid, str(output_dir / "bottom_lid.stl"))
+    print("Exported bottom_lid.stl")
