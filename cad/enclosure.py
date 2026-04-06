@@ -72,18 +72,43 @@ SNAP_CLEARANCE = 0.2          # Clearance around beam in pocket
 SNAP_POCKET_DEPTH = SNAP_BEAM_THICKNESS + SNAP_HOOK_DEPTH + SNAP_CLEARANCE
 
 # Battery cradle (18650: 18.6mm diameter x 65mm length)
+# Cradle is on the cover (X<0) half with >180° snap-in grips.
+# Battery center is offset toward the cover wall so the rib's -X side
+# overlaps with the wall (no struts needed) and the +X lips provide snap-in.
 BATTERY_DIAMETER = 18.6
 BATTERY_LENGTH = 65.0
 BATTERY_CRADLE_RADIUS = BATTERY_DIAMETER / 2 + 0.2  # 0.2mm clearance
-BATTERY_CRADLE_THICKNESS = 1.5  # Rib wall thickness
+BATTERY_CRADLE_THICKNESS = 1.5  # Rib wall thickness (thin enough to flex for snap-in)
 BATTERY_CRADLE_RIB_WIDTH = 3.0  # Rib width along Z axis
+BATTERY_CRADLE_ARC_DEG = 210.0  # >180° for snap-in (gives ~0.25mm interference)
 BATTERY_CRADLE_BOTTOM_Z = WALL_THICKNESS + 2.0  # 2mm above bottom wall for spring clearance
-# Rib Z positions: bottom, middle, top of battery zone (avoiding other internal features)
+# Battery center X: positioned so rib outer surface overlaps wall by 0.5mm
+_INNER_WALL_X = DEVICE_WIDTH / 2.0 - WALL_THICKNESS
+_OUTER_R = BATTERY_CRADLE_RADIUS + BATTERY_CRADLE_THICKNESS
+BATTERY_CENTER_X = -(_INNER_WALL_X + 0.5 - _OUTER_R)  # ~ -7.9mm
+# Rib Z positions: bottom, middle, top of battery zone (avoiding contact platforms)
 BATTERY_CRADLE_RIB_Z = [
-    BATTERY_CRADLE_BOTTOM_Z + 5.0,           # Near bottom
-    BATTERY_CRADLE_BOTTOM_Z + 32.5,          # Middle
-    BATTERY_CRADLE_BOTTOM_Z + 60.0,          # Near top
+    BATTERY_CRADLE_BOTTOM_Z + 8.0,           # Near bottom (above spring contact)
+    BATTERY_CRADLE_BOTTOM_Z + 34.0,          # Middle
+    BATTERY_CRADLE_BOTTOM_Z + 60.0,          # Near top (below plate contact)
 ]
+
+# Battery contacts (Keystone 5222/5224 style)
+# Spring contact (negative) at bottom, plate contact (positive) at top.
+# Connected to main board via 2-wire JST cable.
+CONTACT_WIDTH = 12.0           # Contact base plate width
+CONTACT_DEPTH = 10.0           # Contact base plate depth (along Z)
+CONTACT_FACE_SPACING = 69.5    # Inner face-to-face distance (cell OAL + spring preload)
+CONTACT_SCREW_SPACING = 7.5    # M2 mounting hole center-to-center
+CONTACT_SCREW_PILOT = 1.6      # M2 pilot hole diameter for self-tapping in plastic
+CONTACT_BOSS_OD = 4.5          # Screw boss outer diameter
+CONTACT_BOSS_HEIGHT = 3.0      # Boss protrusion height from platform face
+CONTACT_PLATFORM_THICKNESS = 2.0  # Platform wall thickness
+CONTACT_WIRE_CHANNEL = 3.0     # Wire channel width/height for JST cable routing
+
+# Z positions for contact faces (battery-facing surfaces)
+CONTACT_BOTTOM_Z = BATTERY_CRADLE_BOTTOM_Z              # Spring contact face
+CONTACT_TOP_Z = CONTACT_BOTTOM_Z + CONTACT_FACE_SPACING # Plate contact face
 
 # --- Geometry Helpers ---
 
@@ -404,37 +429,139 @@ def create_large_button():
 
     return button
 
-def add_battery_cradle(enclosure):
+def add_battery_cradle(half):
     """
-    Half-cylinder cradle ribs on the right (X>0) interior to hold an 18650 battery.
-    The battery sits centered along Z. Ribs grip ~180 degrees.
-    The cover half provides the other 180 degrees when closed.
+    Thin-walled arc cradle ribs on the cover (X<0) half for an 18650 battery.
+    Battery center is offset toward the cover wall (BATTERY_CENTER_X) so the
+    rib's -X side overlaps with the inner wall for solid fusion, while the
+    +X lips are thin enough (1.5mm) to flex for snap-in insertion.
     """
-    outer_r = BATTERY_CRADLE_RADIUS + BATTERY_CRADLE_THICKNESS
     inner_r = BATTERY_CRADLE_RADIUS
+    outer_r = inner_r + BATTERY_CRADLE_THICKNESS  # Thin wall, not solid fill
+    cx = BATTERY_CENTER_X
+
+    # The arc spans from (90 - overhang) to (270 + overhang) degrees,
+    # where overhang = (arc_deg - 180) / 2. Centered on 180° (-X direction).
+    overhang_deg = (BATTERY_CRADLE_ARC_DEG - 180.0) / 2.0
+    cut_half_angle = 90.0 - overhang_deg  # Degrees from +X axis to cut boundary
+
+    # Wedge to cut: sector from -cut_half_angle to +cut_half_angle (the +X opening)
+    cut_angle_rad = math.radians(cut_half_angle)
+    s = outer_r + 5  # Extends beyond the ring
+    wedge_pts = [
+        (0, 0),
+        (s, s * math.tan(cut_angle_rad)),
+        (s, -s * math.tan(cut_angle_rad)),
+    ]
 
     for z_pos in BATTERY_CRADLE_RIB_Z:
-        # Full ring, then cut away the X<0 half (cover side)
+        # Thin ring centered on battery position
         rib = (
             cq.Workplane("XY")
             .workplane(offset=z_pos)
+            .center(cx, 0)
             .circle(outer_r)
             .circle(inner_r)
             .extrude(BATTERY_CRADLE_RIB_WIDTH)
         )
 
-        # Remove X<0 half — only keep the right-side cradle
-        s = 50  # Oversized cutting box
-        left_cut = (
+        # Cut the +X sector wedge (relative to battery center)
+        wedge = (
             cq.Workplane("XY")
-            .transformed(offset=(-s / 2, 0, z_pos + BATTERY_CRADLE_RIB_WIDTH / 2))
-            .box(s, s, BATTERY_CRADLE_RIB_WIDTH + 1)
+            .workplane(offset=z_pos - 0.5)
+            .center(cx, 0)
+            .polyline(wedge_pts).close()
+            .extrude(BATTERY_CRADLE_RIB_WIDTH + 1)
         )
-        rib = rib.cut(left_cut)
+        rib = rib.cut(wedge)
 
-        enclosure = enclosure.union(rib)
+        half = half.union(rib)
 
-    return enclosure
+    return half
+
+
+def add_battery_contact_mounts(half):
+    """
+    Add mounting platforms for Keystone-style battery contacts on the cover half.
+    Bottom platform: spring contact (negative terminal), spring faces +Z.
+    Top platform: plate contact (positive terminal), plate faces -Z.
+    Each platform has M2 screw bosses and a wire channel for JST cable routing.
+    """
+    inner_wall_x = DEVICE_WIDTH / 2.0 - WALL_THICKNESS  # Inner wall distance from center
+    overlap = 0.5  # Into wall for solid boolean fusion
+
+    for is_top in [False, True]:
+        if is_top:
+            # Top platform: contact face points down (-Z), platform above the face
+            face_z = CONTACT_TOP_Z
+            platform_z = face_z  # Platform extends upward from contact face
+            boss_dir = -1  # Bosses extend downward toward battery
+        else:
+            # Bottom platform: contact face points up (+Z), platform below the face
+            face_z = CONTACT_BOTTOM_Z
+            platform_z = face_z - CONTACT_PLATFORM_THICKNESS
+            boss_dir = 1  # Bosses extend upward toward battery
+
+        # Platform: spans from inner wall (with overlap) to past battery center
+        # to support the screw bosses centered on the battery axis.
+        cx = BATTERY_CENTER_X
+        platform_width_y = CONTACT_WIDTH + 2.0  # Contact width + 1mm margin each side
+        boss_overshoot = CONTACT_BOSS_OD / 2 + 0.5
+        platform_x_min = -(inner_wall_x + overlap)
+        platform_x_max = cx + boss_overshoot
+        platform_extent_x = platform_x_max - platform_x_min
+        platform_center_x = (platform_x_min + platform_x_max) / 2
+
+        platform = (
+            cq.Workplane("XY")
+            .workplane(offset=platform_z)
+            .center(platform_center_x, 0)
+            .rect(platform_extent_x, platform_width_y)
+            .extrude(CONTACT_PLATFORM_THICKNESS)
+        )
+        half = half.union(platform)
+
+        # M2 screw bosses on the battery-facing side of the platform.
+        # Bosses embed 0.5mm into the platform for solid boolean fusion.
+        embed = 0.5
+        for screw_sign in [-1, 1]:
+            screw_y = screw_sign * CONTACT_SCREW_SPACING / 2
+
+            # Solid boss (embedded into platform, centered on battery axis)
+            boss_start_z = face_z - embed if boss_dir > 0 else face_z + embed
+            boss = (
+                cq.Workplane("XY")
+                .workplane(offset=boss_start_z)
+                .center(cx, screw_y)
+                .circle(CONTACT_BOSS_OD / 2)
+                .extrude(boss_dir * (CONTACT_BOSS_HEIGHT + embed))
+            )
+            half = half.union(boss)
+
+            # Pilot hole through boss and platform
+            hole_z_start = platform_z - 0.5 if not is_top else face_z - 0.5
+            hole_depth = CONTACT_PLATFORM_THICKNESS + CONTACT_BOSS_HEIGHT + 1
+            pilot = (
+                cq.Workplane("XY")
+                .workplane(offset=hole_z_start)
+                .center(cx, screw_y)
+                .circle(CONTACT_SCREW_PILOT / 2)
+                .extrude(hole_depth)
+            )
+            half = half.cut(pilot)
+
+        # Wire channel: notch in the platform edge for JST cable routing
+        # Positioned at the -X edge (toward the wall) so wires run along the wall
+        channel = (
+            cq.Workplane("XY")
+            .workplane(offset=platform_z - 0.5)
+            .center(-inner_wall_x + CONTACT_WIRE_CHANNEL / 2, 0)
+            .rect(CONTACT_WIRE_CHANNEL + 1, CONTACT_WIRE_CHANNEL)
+            .extrude(CONTACT_PLATFORM_THICKNESS + 1)
+        )
+        half = half.cut(channel)
+
+    return half
 
 
 # --- Split for Printing ---
@@ -565,6 +692,11 @@ def split_enclosure(enclosure):
                                hook_notch_z_len))
             right_half = right_half.cut(hook_notch)
 
+    # --- Step 4: Battery cradle and contact mounts on cover (left) half ---
+    # Added after split so snap-in lips can extend past X=0.
+    left_half = add_battery_cradle(left_half)
+    left_half = add_battery_contact_mounts(left_half)
+
     return right_half, left_half
 
 # --- Main Build ---
@@ -613,7 +745,6 @@ def build_enclosure():
     enclosure = add_power_button(enclosure)
     enclosure = add_usbc_port(enclosure)
     enclosure = add_large_button_feature(enclosure)
-    enclosure = add_battery_cradle(enclosure)
 
     return enclosure
 

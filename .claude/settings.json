@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "tscircuit-docs@tscircuit-skills": true,
+    "tscircuit-workflow@tscircuit-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "tscircuit-skills": {
+      "source": {
+        "source": "github",
+        "repo": "detroittommy879/tscircuit-skills"
+      }
+    }
+  }
+}

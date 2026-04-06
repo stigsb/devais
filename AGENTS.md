@@ -4,7 +4,40 @@ ALWAYS READ `context/README.md` for an overview of task-specific instructions.
 
 ## Coding Agent Instructions
 
-When working with 3D models, CAD files, or CadQuery code in this project, use the cad-moldeller-skill from .claude/skills/cad-modeller/:
+When working with 3D models, CAD files, or CadQuery code in this project, use the cad-skill from .claude/skills/cad-skill/.
+
+### CAD Build & Preview Workflow
+
+Generate STL files, then render multi-view previews for visual inspection:
+
+```bash
+uv run cad-generate                                    # Build all STL files to cad/output/
+uv run cad-preview cad/output/*.stl                      # Preview all STL files
+uv run cad-preview cad/output/enclosure.stl              # Multi-view preview (default)
+uv run cad-preview cad/output/enclosure.stl --views iso  # Single isometric view
+```
+
+After rendering, read the generated PNG (saved next to the STL as `*_preview.png`) to visually inspect the model. Check against the design review checklist in `.claude/skills/cad-skill/design-review.md`.
+
+### PCB Build & Assembly Workflow
+
+The PCB pipeline has a strict build order — each step depends on the previous:
+
+```
+index.circuit.tsx  →(tsci build)→  dist/index/circuit.json  →(generate_assembly.py)→  assembly-top.svg/.png
+     (source)                        (component positions)                              (visual diagram)
+```
+
+1. **Edit** `hardware/pcb/index.circuit.tsx` (source of truth)
+2. **Build** with `cd hardware/pcb && npx tsci build` — validates circuit, writes `dist/index/circuit.json`
+3. **Generate assembly** with `uv run python3 hardware/pcb/generate_assembly.py` — reads circuit.json, writes SVG/PNG
+
+**Important:** If circuit.json is stale (e.g. from cache), delete `hardware/pcb/dist/` and rebuild. The assembly generator reads board dimensions and component positions from circuit.json, so stale data produces incorrect diagrams.
+
+```bash
+uv run pcb-build          # Shortcut: runs tsci build
+uv run pcb-export         # Build + export SVG/schematic/assembly/netlist
+```
 
 ## Project Purpose
 
@@ -50,7 +83,7 @@ Devais is a handheld AI assistant device designed to solve a fundamental UX prob
 **Control:**
 - Push-to-talk button: GPIO with interrupt
 - Power button: GPIO with interrupt
-- Status LEDs: 2-3 GPIOs
+- 2x WS2812B-2020 addressable RGB LEDs: 1 data GPIO + 1 MOSFET gate GPIO
 
 **Power:**
 - USB-C: VBUS detection + charging circuit
@@ -107,7 +140,7 @@ Devais is a handheld AI assistant device designed to solve a fundamental UX prob
 - **MAX98357A:** Small breakout board (~16×16mm)
 - **Speaker:** Compact, ~20-28mm diameter
 - **Buttons:** 6×6mm tactile switches
-- **LEDs:** 3mm or 5mm through-hole
+- **LEDs:** 2x WS2812B-2020 (2x2mm SMD package) on small PCB
 
 ## Development Philosophy
 

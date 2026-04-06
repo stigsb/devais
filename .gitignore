@@ -40,3 +40,4 @@ dist/
 # Documentation builds
 docs/_build/
 /cad/output
+.tscircuit

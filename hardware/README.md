@@ -33,10 +33,9 @@ hardware/
 ### User Interface
 - Push-to-talk button (with interrupt on P0.02)
 - Power/mode button (with interrupt on P0.03)
-- 3x Status LEDs:
-  - Power (green)
-  - BLE connectivity (blue)
-  - Activity indicator (amber/yellow)
+- 2x **WS2812B-2020** addressable RGB LEDs (2x2mm package) on small PCB
+  - Single data pin, daisy-chained
+  - VDD switched via N-channel MOSFET to cut idle draw when LEDs are off
 
 ### Microcontroller
 - **Seeed XIAO nRF52840** module
@@ -56,9 +55,8 @@ hardware/
 | **User Interface** | | |
 | PTT Button | P0.02 | Push-to-talk (interrupt) |
 | Power Button | P0.03 | Power/mode (interrupt) |
-| Power LED | P0.06 | Green status LED |
-| BLE LED | P0.07 | Blue connectivity LED |
-| Activity LED | P0.08 | Amber activity LED |
+| LED Data | P0.06 | WS2812B-2020 data (2 LEDs daisy-chained) |
+| LED Power | P0.07 | MOSFET gate for LED VDD cutoff |
 
 ## Generating KiCad Files
 
