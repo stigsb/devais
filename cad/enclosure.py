@@ -19,8 +19,8 @@ HALF_LONG_SIDE = LONG_SIDE_LENGTH / 2.0
 CORNER_COORD = DEVICE_WIDTH / 2.0
 
 # Components
-LED_DIAMETER = 3.0
-LED_SPACING = 8.0
+LED_DIAMETER = 3.0  # 3mm holes for WS2812B-2020 (2mm) with light diffusion margin
+LED_POSITIONS_X = [5.0, 11.0]  # Two RGB LEDs, both on right (chassis) half
 LED_TOP_OFFSET = 10.0
 
 MIC_HOLE_DIAMETER = 1.5
@@ -29,6 +29,7 @@ MIC_PORT_DIAMETER = 1.0 # Internal port
 MIC_POCKET_WIDTH = 4.72 + 0.2
 MIC_POCKET_HEIGHT = 3.76 + 0.2
 MIC_POCKET_DEPTH = 1.0 # Depth of pocket into the wall (from inside)
+MIC_X_OFFSET = 1.0  # Shifted +1mm so hole is fully on chassis half after X=0 split
 
 SPEAKER_DIAMETER = LONG_SIDE_LENGTH * 0.8
 SPEAKER_TOP_OFFSET = LED_TOP_OFFSET + 10.0 # Upper edge 10mm below LEDs
@@ -105,16 +106,15 @@ def create_octagonal_prism(height, width, half_long_side, fillet_radius=0.0):
 def add_led_holes(enclosure):
     """
     Front side (Y+), 10mm from top.
-    3x 3mm holes, 8mm spacing.
+    2x 3mm holes for WS2812B-2020 RGB LEDs at explicit X positions.
     """
     z_pos = DEVICE_HEIGHT - LED_TOP_OFFSET
 
-    # Front face workplane (XZ at Y = +CORNER_COORD)
-    wp = cq.Workplane("XZ").workplane(offset=CORNER_COORD).center(0, z_pos)
-
-    for i in [-1, 0, 1]:
+    for x_pos in LED_POSITIONS_X:
         hole = (
-            wp.center(i * LED_SPACING, 0)
+            cq.Workplane("XZ")
+            .workplane(offset=CORNER_COORD)
+            .center(x_pos, z_pos)
             .circle(LED_DIAMETER / 2)
             .extrude(-(WALL_THICKNESS + CUT_OVERSHOOT))
         )
@@ -125,35 +125,34 @@ def add_led_holes(enclosure):
 def add_mic_hole_and_mount(enclosure):
     """
     Front side (Y+), 10mm from bottom.
+    Shifted +1mm in X so hole is fully on chassis half after X=0 split.
     Includes acoustic hole and internal mounting pocket.
     """
     z_pos = MIC_BOTTOM_OFFSET
-    
+
     # 1. External Acoustic Hole
     wp = (
         cq.Workplane("XZ")
         .workplane(offset=CORNER_COORD)
-        .center(0, z_pos)
+        .center(MIC_X_OFFSET, z_pos)
     )
-    
+
     acoustic_hole = wp.circle(MIC_HOLE_DIAMETER / 2).extrude(-(WALL_THICKNESS + CUT_OVERSHOOT))
     enclosure = enclosure.cut(acoustic_hole)
-    
+
     # Internal mounting pocket for INMP441 board.
-    # Cut into the wall from the inner surface toward the outer surface (+Y).
-    # XZ workplane normal is -Y, so extrude(negative) goes in +Y (into wall material).
     inner_y = CORNER_COORD - WALL_THICKNESS
 
     pocket = (
         cq.Workplane("XZ")
         .workplane(offset=inner_y)
-        .center(0, z_pos)
+        .center(MIC_X_OFFSET, z_pos)
         .rect(MIC_POCKET_WIDTH, MIC_POCKET_HEIGHT)
         .extrude(-MIC_POCKET_DEPTH)  # -Y normal means negative extrude goes +Y into wall
     )
 
     enclosure = enclosure.cut(pocket)
-    
+
     return enclosure
 
 def add_speaker_grille(enclosure):
@@ -551,8 +550,8 @@ def build_enclosure():
     solid = solid.edges("<Z or >Z").fillet(FILLET_RADIUS)
     
     # Hollow out using boolean subtraction (more reliable than .shell() on filleted geometry).
-    # Inner solid starts 1mm below Z=0 to ensure open bottom, extends to WALL_THICKNESS below top.
-    h_inner = DEVICE_HEIGHT - WALL_THICKNESS
+    # Inner solid starts at WALL_THICKNESS (closed bottom) and extends to WALL_THICKNESS below top.
+    h_inner = DEVICE_HEIGHT - 2 * WALL_THICKNESS  # Leave wall at both top and bottom
 
     max_c = DEVICE_WIDTH / 2.0
     h_l = HALF_LONG_SIDE
@@ -563,10 +562,10 @@ def build_enclosure():
 
     inner_solid = (
         cq.Workplane("XY")
-        .workplane(offset=-1.0)
+        .workplane(offset=WALL_THICKNESS)
         .polyline(pts).close()
         .offset2D(-WALL_THICKNESS)
-        .extrude(h_inner + 1.0)
+        .extrude(h_inner)
     )
 
     # Inner fillets match outer minus wall thickness for constant wall
