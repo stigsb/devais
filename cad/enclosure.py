@@ -71,6 +71,20 @@ SNAP_HOOK_RAMP = 1.5          # Z extent of 30° lead-in ramp
 SNAP_CLEARANCE = 0.2          # Clearance around beam in pocket
 SNAP_POCKET_DEPTH = SNAP_BEAM_THICKNESS + SNAP_HOOK_DEPTH + SNAP_CLEARANCE
 
+# Battery cradle (18650: 18.6mm diameter x 65mm length)
+BATTERY_DIAMETER = 18.6
+BATTERY_LENGTH = 65.0
+BATTERY_CRADLE_RADIUS = BATTERY_DIAMETER / 2 + 0.2  # 0.2mm clearance
+BATTERY_CRADLE_THICKNESS = 1.5  # Rib wall thickness
+BATTERY_CRADLE_RIB_WIDTH = 3.0  # Rib width along Z axis
+BATTERY_CRADLE_BOTTOM_Z = WALL_THICKNESS + 2.0  # 2mm above bottom wall for spring clearance
+# Rib Z positions: bottom, middle, top of battery zone (avoiding other internal features)
+BATTERY_CRADLE_RIB_Z = [
+    BATTERY_CRADLE_BOTTOM_Z + 5.0,           # Near bottom
+    BATTERY_CRADLE_BOTTOM_Z + 32.5,          # Middle
+    BATTERY_CRADLE_BOTTOM_Z + 60.0,          # Near top
+]
+
 # --- Geometry Helpers ---
 
 def create_octagonal_prism(height, width, half_long_side, fillet_radius=0.0):
@@ -390,6 +404,39 @@ def create_large_button():
 
     return button
 
+def add_battery_cradle(enclosure):
+    """
+    Half-cylinder cradle ribs on the right (X>0) interior to hold an 18650 battery.
+    The battery sits centered along Z. Ribs grip ~180 degrees.
+    The cover half provides the other 180 degrees when closed.
+    """
+    outer_r = BATTERY_CRADLE_RADIUS + BATTERY_CRADLE_THICKNESS
+    inner_r = BATTERY_CRADLE_RADIUS
+
+    for z_pos in BATTERY_CRADLE_RIB_Z:
+        # Full ring, then cut away the X<0 half (cover side)
+        rib = (
+            cq.Workplane("XY")
+            .workplane(offset=z_pos)
+            .circle(outer_r)
+            .circle(inner_r)
+            .extrude(BATTERY_CRADLE_RIB_WIDTH)
+        )
+
+        # Remove X<0 half — only keep the right-side cradle
+        s = 50  # Oversized cutting box
+        left_cut = (
+            cq.Workplane("XY")
+            .transformed(offset=(-s / 2, 0, z_pos + BATTERY_CRADLE_RIB_WIDTH / 2))
+            .box(s, s, BATTERY_CRADLE_RIB_WIDTH + 1)
+        )
+        rib = rib.cut(left_cut)
+
+        enclosure = enclosure.union(rib)
+
+    return enclosure
+
+
 # --- Split for Printing ---
 
 def split_enclosure(enclosure):
@@ -583,6 +630,7 @@ def build_enclosure():
     enclosure = add_power_button(enclosure)
     enclosure = add_usbc_port(enclosure)
     enclosure = add_large_button_feature(enclosure)
+    enclosure = add_battery_cradle(enclosure)
 
     return enclosure
 
