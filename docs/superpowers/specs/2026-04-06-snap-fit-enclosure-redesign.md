@@ -29,18 +29,20 @@ All bottom lid machinery is removed:
 
 ## LEDs
 
-Two RGB LEDs replace the previous three single-color 3mm LEDs.
+Two addressable RGB LEDs replace the previous three single-color 3mm LEDs.
 
 - **Count:** 2 (was 3)
-- **Type:** RGB (was single-color)
+- **Type:** WS2812B-2020 addressable RGB in 2020 package (2x2mm), mounted on a small PCB
+- **Control:** Single data pin, daisy-chained (saves GPIO pins on nRF52840)
+- **Power:** LED VDD switched via MOSFET to cut idle draw (~1mA/LED) when LEDs are off
 - **Positions:** x=+5mm and x=+11mm on the front face
 - **Z position:** 10mm from top (unchanged)
-- **Hole diameter:** 5mm (standard RGB LED package)
+- **Hole diameter:** 3mm (sufficient for 2020 package with light diffusion)
 - **Both LEDs are on the right (chassis) half** — no cross-joint wiring needed
 
 ### Parameter Changes
 
-- `LED_DIAMETER`: 3.0 -> 5.0
+- `LED_DIAMETER`: 3.0 -> 3.0 (unchanged, now sized for 2020 package)
 - `LED_SPACING`: 8.0 -> removed (positions are explicit)
 - `LED_POSITIONS_X`: new parameter, [5.0, 11.0]
 - LED count: 3 -> 2
