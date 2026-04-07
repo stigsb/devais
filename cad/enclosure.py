@@ -106,11 +106,35 @@ CONTACT_BOSS_HEIGHT = 3.0      # Boss protrusion height from platform face
 CONTACT_PLATFORM_THICKNESS = 2.0  # Platform wall thickness
 CONTACT_WIRE_CHANNEL = 3.0     # Wire channel width/height for JST cable routing
 
+# PCB mounting bosses (M2 self-tapping screws into plastic)
+# Board: 36x140mm, mounted vertically on right wall inner surface.
+# Coordinate mapping: enclosure_Y = pcb_X, enclosure_Z = pcb_Y + 75
+PCB_Y_OFFSET = 75.0           # Board center pcbY=0 maps to enclosure Z=75mm
+SCREW_PILOT_DIA = 1.6         # M2 self-tapping pilot hole diameter
+BOSS_OD = 4.5                 # Boss outer diameter (1.45mm wall around pilot hole)
+BOSS_STANDOFF = 2.0           # PCB standoff from inner wall surface
+
+# PCB mounting hole positions (pcbX, pcbY) from index.circuit.tsx
+# pcbX=±10 keeps bosses on the flat face (within ±12.45mm half-long-side)
+PCB_MOUNTING_HOLES = [
+    (-10, -59),  # MH1:  USB-C zone left
+    ( 10, -59),  # MH2:  USB-C zone right
+    (-10, -37),  # MH3:  mid-lower left
+    ( 10, -37),  # MH4:  mid-lower right
+    (-10,  22),  # MH5:  mid-upper left
+    ( 10,  22),  # MH6:  mid-upper right
+    (-10,  40),  # MH7:  PTT zone left
+    ( 10,  40),  # MH8:  PTT zone right
+    (-10,  67),  # MH9:  top left
+    ( 10,  67),  # MH10: top right
+]
+
 # Z positions for contact faces (battery-facing surfaces)
 CONTACT_BOTTOM_Z = BATTERY_CRADLE_BOTTOM_Z              # Spring contact face
 CONTACT_TOP_Z = CONTACT_BOTTOM_Z + CONTACT_FACE_SPACING # Plate contact face
 
 # --- Geometry Helpers ---
+
 
 def create_octagonal_prism(height, width, half_long_side, fillet_radius=0.0):
     """
@@ -564,6 +588,45 @@ def add_battery_contact_mounts(half):
     return half
 
 
+def add_pcb_mounting_bosses(half):
+    """
+    Add short cylindrical bosses with M2 pilot holes to the chassis (right) half.
+    Bosses protrude from the inner right wall inward (-X direction).
+    PCB back rests on boss faces; M2 self-tapping screws go from PCB front
+    through the 2.2mm board holes and thread into the pilot holes.
+    All holes at pcbX=±10, well within the flat face (±12.45mm).
+    """
+    inner_wall_x = DEVICE_WIDTH / 2.0 - WALL_THICKNESS
+    overlap = 0.5  # Into wall for solid boolean fusion
+
+    for pcb_x, pcb_y in PCB_MOUNTING_HOLES:
+        enc_y = float(pcb_x)
+        enc_z = float(pcb_y) + PCB_Y_OFFSET
+
+        # Boss: short cylinder from inner wall inward toward X=0
+        boss = (
+            cq.Workplane("YZ")
+            .workplane(offset=inner_wall_x + overlap)
+            .center(enc_y, enc_z)
+            .circle(BOSS_OD / 2)
+            .extrude(-(BOSS_STANDOFF + overlap))
+        )
+        half = half.union(boss)
+
+        # Pilot hole: drilled from PCB-facing end through boss into wall
+        pcb_face_x = inner_wall_x - BOSS_STANDOFF
+        pilot = (
+            cq.Workplane("YZ")
+            .workplane(offset=pcb_face_x)
+            .center(enc_y, enc_z)
+            .circle(SCREW_PILOT_DIA / 2)
+            .extrude(BOSS_STANDOFF + WALL_THICKNESS)
+        )
+        half = half.cut(pilot)
+
+    return half
+
+
 # --- Split for Printing ---
 
 def split_enclosure(enclosure):
@@ -696,6 +759,9 @@ def split_enclosure(enclosure):
     # Added after split so snap-in lips can extend past X=0.
     left_half = add_battery_cradle(left_half)
     left_half = add_battery_contact_mounts(left_half)
+
+    # --- Step 5: PCB mounting bosses on chassis (right) half ---
+    right_half = add_pcb_mounting_bosses(right_half)
 
     return right_half, left_half
 

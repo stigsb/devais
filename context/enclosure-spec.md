@@ -414,43 +414,81 @@ cq.Workplane("XY")
 - Opening in enclosure with 8.5mm corner radius
 - Raised edge frame (1.6mm wide, 3.2mm tall) with 0.3mm fillet on outer edges
 
-## 3.4. Battery Compartment
+## 3.4. PCB Mounting Bosses ✅ IMPLEMENTED
 
-- 18650 battery (18.6mm × 65mm) held by half-cylinder cradle ribs on chassis (right) half
+The PCB (36×140mm, see `hardware/pcb/index.circuit.tsx`) is mounted vertically on the inner right wall of the chassis half using M2 self-tapping screws into short plastic bosses.
+
+### 3.4.1. Coordinate Mapping
+- `enclosure_Y = pcb_X` (board width maps to front/back)
+- `enclosure_Z = pcb_Y + 75` (board center at Z=75mm)
+
+### 3.4.2. Self-Tapping Screw Bosses
+- **10 bosses** matching PCB mounting holes MH1–MH10
+- **Boss OD:** 4.5mm (1.45mm wall around 1.6mm pilot hole)
+- **Pilot hole:** 1.6mm diameter, drilled through boss and wall for M2 self-tapping
+- **Standoff:** 2.0mm from inner wall surface to PCB face
+- **Wall overlap:** 0.5mm into wall for solid boolean fusion
+- PCB back surface sits 2mm from inner wall — back-side components (USB-C, power button, PTT switch) can reach through wall cutouts
+
+### 3.4.3. Mounting Hole Positions (from PCB)
+
+Holes at pcbX=±10, well within the flat face (±12.45mm half-long-side), avoiding chamfers.
+
+| Hole | pcbX | pcbY | Enc Y | Enc Z | Zone |
+|------|------|------|-------|-------|------|
+| MH1  | -10  | -59  | -10   | 16    | USB-C |
+| MH2  | +10  | -59  | +10   | 16    | USB-C |
+| MH3  | -10  | -37  | -10   | 38    | Mid-lower |
+| MH4  | +10  | -37  | +10   | 38    | Mid-lower |
+| MH5  | -10  | +22  | -10   | 97    | Mid-upper |
+| MH6  | +10  | +22  | +10   | 97    | Mid-upper |
+| MH7  | -10  | +40  | -10   | 115   | PTT |
+| MH8  | +10  | +40  | +10   | 115   | PTT |
+| MH9  | -10  | +67  | -10   | 142   | Top |
+| MH10 | +10  | +67  | +10   | 142   | Top |
+
+### 3.4.4. Assembly
+- PCB back rests on boss faces (back side toward wall, front side facing interior)
+- M2 self-tapping screws go from PCB front through 2.2mm board holes into pilot holes
+- Thread engagement: ~3.6mm (2mm boss + 1.6mm wall)
+
+## 3.5. Battery Compartment
+
+- 18650 battery (18.6mm × 65mm) held by half-cylinder cradle ribs on cover (left) half
 - 3 ribs at Z positions near bottom, middle, and top of battery zone
 - Rib inner radius: 9.5mm (battery radius + 0.2mm clearance), thickness: 1.5mm
 - Cover half provides the other 180° containment when snapped on
 - Positive contact at top, negative spring at bottom interior of chassis half
 - Entire electrical path stays on chassis half — no cross-joint wiring
 
-## 3.5. Split for 3D Printing
+## 3.6. Split for 3D Printing
 
 The enclosure is split lengthwise at X=0 into right (chassis) and left (cover) halves for FDM printing.
 
-### 3.5.1. Why Split?
+### 3.6.1. Why Split?
 - Printing a hollow octagonal tube upright produces excessive internal support material
 - Two half-shells print flat on the bed with no supports needed
 - All electronics mount on one half (chassis), making assembly and battery replacement easy
 
-### 3.5.2. Split Plane: X=0
-- **Right half (X>0) — Chassis:** Large button, power button, USB-C, LEDs, battery cradle, all electronics
+### 3.6.2. Split Plane: X=0
+- **Right half (X>0) — Chassis:** Large button, power button, USB-C, LEDs, PCB mounting bosses, all electronics
 - **Left half (X<0) — Cover:** Purely mechanical shell, snaps onto chassis
 - Front-face features (speaker grille, mic) are split between halves at X=0
 - Mic hole shifted to x=+1mm so it's fully on the chassis half
 - Print each half with the outer flat face (long side) down on the bed
 
-### 3.5.3. Snap-Fit Joint System (No Glue)
+### 3.6.3. Snap-Fit Joint System (No Glue)
 
 The two halves are held together by a tongue-and-groove + snap-clip system designed for repeated open/close during prototyping without glue. Enables battery replacement by popping the cover off.
 
-#### 3.5.3.1. Tongue-and-Groove Rails (Alignment)
+#### 3.6.3.1. Tongue-and-Groove Rails (Alignment)
 - Runs along full Z height (inset 5mm from top/bottom to clear fillet zones) on both front and back wall seams
 - **Tongue:** 1.0mm wide (Y) × 0.8mm protrusion (X), on cover (left) half split face, extends into chassis half
 - **Groove:** 1.3mm wide × 0.95mm deep, cut into chassis (right) half split face
 - 0.15mm per-side clearance for FDM tolerance
 - Provides lateral (Y) and radial (X) alignment
 
-#### 3.5.3.2. Cantilever Snap Clips (Retention)
+#### 3.6.3.2. Cantilever Snap Clips (Retention)
 - 4 clips total: 2 on front wall, 2 on back wall, at Z = 45mm and Z = 135mm
 - Positioned at wall center (Y = ±19.2mm), avoiding feature zones
 - **Beam:** 8mm long (Z) × 3mm wide (Y) × 0.8mm thick (X), attached at top, free end at bottom
@@ -460,14 +498,14 @@ The two halves are held together by a tongue-and-groove + snap-clip system desig
 - **Deflection safety:** 0.4mm undercut is ~40% of PLA max (1.0mm for 8mm beam), safe for repeated cycling
 - **Material note:** PETG recommended for best fatigue life (500+ cycles vs ~50 for PLA)
 
-### 3.5.4. Implementation: Union Overlap Requirement
+### 3.6.4. Implementation: Union Overlap Requirement
 CadQuery `.union()` creates a compound (multiple disconnected solids) instead of a single fused solid when operands only touch at a boundary without volumetric overlap. This breaks boolean splitting.
 
 **Fix applied:**
 - Battery cradle rib half-rings overlap slightly with inner walls for solid union
 - Result: `build_enclosure()` returns a single solid that splits cleanly
 
-### 3.5.5. XZ Workplane Normal Direction
+### 3.6.5. XZ Workplane Normal Direction
 The `cq.Workplane("XZ")` normal is **-Y** (not +Y). This means:
 - `.extrude(positive)` goes in **-Y** direction
 - `.extrude(negative)` goes in **+Y** direction

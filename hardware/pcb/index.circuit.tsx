@@ -12,8 +12,8 @@
  *   Power button at Z=44mm (board Y=-31)
  *   PTT switch at Z=111mm (board Y=+36)
  *
- * Mounting: 6x M2 holes — 2 flanking USB-C zone, 2 flanking PTT zone,
- *           2 at top corners. All stress points supported.
+ * Mounting: 10x M2 holes at pcbX=±10 (on flat face, avoiding chamfers).
+ *           M2 self-tapping screws into plastic bosses on chassis wall.
  */
 
 export default () => (
@@ -204,7 +204,7 @@ export default () => (
     <trace from=".C_MIC > .pin2" to="net.GND" />
 
     <chip name="U_AMP" footprint="qfn16"
-      pcbX={5} pcbY={8} schX={8} schY={5}
+      pcbX={8} pcbY={8} schX={8} schY={5}
       supplierPartNumbers={{ jlcpcb: ["C910544"] }}
       pinLabels={{
         pin1: "SD_MODE", pin2: "GAIN", pin3: "GND1",
@@ -227,7 +227,7 @@ export default () => (
       }} />
 
     <capacitor name="C_AMP1" capacitance="10uF" footprint="0805"
-      pcbX={-8} pcbY={8}
+      pcbX={-8} pcbY={3}
       supplierPartNumbers={{ jlcpcb: ["C15850"] }} />
     <trace from=".C_AMP1 > .pin1" to="net.VCC3V3" />
     <trace from=".C_AMP1 > .pin2" to="net.GND" />
@@ -311,24 +311,24 @@ export default () => (
         MOUNTING HOLES — 6x M2, supporting mechanical stress
         ═══════════════════════════════════════════════════════ */}
 
-    {/* Bottom pair: supports USB-C zone (Z≈18mm, Y=-57) */}
-    <hole name="MH1" diameter="2.2mm" pcbX={-15} pcbY={-57} />
-    <hole name="MH2" diameter="2.2mm" pcbX={15}  pcbY={-57} />
+    {/* Bottom pair: supports USB-C zone (Z≈16mm, Y=-59) */}
+    <hole name="MH1" diameter="2.2mm" pcbX={-10} pcbY={-59} />
+    <hole name="MH2" diameter="2.2mm" pcbX={10}  pcbY={-59} />
 
     {/* Mid pair: between USB-C and power button (Z≈38mm, Y=-37) */}
-    <hole name="MH3" diameter="2.2mm" pcbX={-15} pcbY={-37} />
-    <hole name="MH4" diameter="2.2mm" pcbX={15}  pcbY={-37} />
+    <hole name="MH3" diameter="2.2mm" pcbX={-10} pcbY={-37} />
+    <hole name="MH4" diameter="2.2mm" pcbX={10}  pcbY={-37} />
 
     {/* Mid-upper pair: between MCU and PTT (Z≈97mm, Y=+22) */}
-    <hole name="MH5" diameter="2.2mm" pcbX={-15} pcbY={22} />
-    <hole name="MH6" diameter="2.2mm" pcbX={15}  pcbY={22} />
+    <hole name="MH5" diameter="2.2mm" pcbX={-10} pcbY={22} />
+    <hole name="MH6" diameter="2.2mm" pcbX={10}  pcbY={22} />
 
     {/* Upper pair: flanks PTT switch (Z≈115mm, Y=+40) */}
-    <hole name="MH7" diameter="2.2mm" pcbX={-15} pcbY={40} />
-    <hole name="MH8" diameter="2.2mm" pcbX={15}  pcbY={40} />
+    <hole name="MH7" diameter="2.2mm" pcbX={-10} pcbY={40} />
+    <hole name="MH8" diameter="2.2mm" pcbX={10}  pcbY={40} />
 
     {/* Top pair: near top of board (Z≈140mm, Y=+65) */}
-    <hole name="MH9"  diameter="2.2mm" pcbX={-15} pcbY={67} />
-    <hole name="MH10" diameter="2.2mm" pcbX={15}  pcbY={67} />
+    <hole name="MH9"  diameter="2.2mm" pcbX={-10} pcbY={67} />
+    <hole name="MH10" diameter="2.2mm" pcbX={10}  pcbY={67} />
   </board>
 )
