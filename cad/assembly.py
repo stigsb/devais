@@ -25,6 +25,10 @@ SWITCH_THROW = 0.25  # A070-E1.pdf; tune actuator gap with printed shims.
 ACTUATOR_GAP = 0.10
 SPEAKER_Z = e.DEVICE_HEIGHT - e.SPEAKER_TOP_OFFSET - e.SPEAKER_DIAMETER / 2
 LED_SOCKET_X = e.LED_BOARD_X - 2.2  # SH socket behind the LED board, offset towards X+
+WALL_INNER_Y = -(e.DEVICE_WIDTH/2 - e.WALL_THICKNESS)  # inside face of the front wall
+BAT_NEG_CHANNEL_X = -10.5  # lead centreline along the front wall, clear of the mic seat
+BAT_NEG_CHANNEL_Y = WALL_INNER_Y + 0.1 + BAT_WIRE_OD/2
+BAT_NEG_CHANNEL_Z = (22.5, 97.0)  # straight run; 4 mm bends lead in and out beyond it
 
 
 def box(size, center):
@@ -260,7 +264,7 @@ def build():
         'SPK': (2, WIRE_OD, [(8.4,-3,105.75),(8.4,-3,98),(0,-3,98),(0,-10,98),(5,-10,SPEAKER_Z-4),(5,-14.3,SPEAKER_Z-4)], 'J_SPK','speaker'),
         'LED': (3, WIRE_OD, [(8.4,-9,118.25),(4,-9,118.25),(4,-9,127),(LED_SOCKET_X,-9,132),(LED_SOCKET_X,-13.75,132),(LED_SOCKET_X,-13.75,135.5)], 'J_LED','LED_J_SH_mated'),
         'BAT_POS': (1, BAT_WIRE_OD, [(1.9,2,101),(-3,2,101),(-3,8,95),(-3,8,86.5),(-3,2,86.5)], 'J_BAT','cell_positive_contact'),
-        'BAT_NEG': (1, BAT_WIRE_OD, [(1.9,4,101),(-3,4,101),(-3,16,94),(-3,16,7),(-3,8,7),(-3,8,18.5),(-3,2,18.5)], 'J_BAT','cell_negative_contact'),
+        'BAT_NEG': (1, BAT_WIRE_OD, [(1.9,4,101),(BAT_NEG_CHANNEL_X,4,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,18.5),(-3,-2,18.5)], 'J_BAT','cell_negative_contact'),
         'NTC': (2, WIRE_OD, [(8.4,-7,97.25),(8.4,-7,91),(6,-11,91),(6,-11,58),(1,-11,58),(-2,-9.8,58)], 'J_NTC','NTC'),
     }
     lengths={}
@@ -280,13 +284,14 @@ def build():
             add(label,wire,['#c3473e','#333333','#e2b73e','#658dce'][i%4])
             contact(label,start,'wire termination at connector/contact',box((4,4,4),points[0]))
             contact(label,end,'wire termination at connector/contact',box((4,4,4),points[-1]))
-    # Chassis-only clips retain the two long leads when the cover is removed.
-    for z in (50,82):
-        support=box((19,2,2),(5.5,14.5,z)).fuse(box((2,3.5,2),(14,12.9,z)))
-        clip=box((4,4,3),(-3,16,z)).cut(cylinder(.75,4,(-3,16,z-2),(0,0,1)))
-        clip=clip.cut(box((.9,3,4),(-3,17.5,z)))
-        support=support.fuse(clip).cut(cylinder(.75,4,(-3,16,z-2),(0,0,1)))
-        parts['chassis']=parts['chassis'].fuse(support)
+    # The battery-negative lead lies in a channel on the inside of the front wall:
+    # two ribs on the wall, with the void notched through the saddle webs and
+    # contact carriers it crosses. Printable in the shell's orientation.
+    z0,z1=BAT_NEG_CHANNEL_Z
+    ribs=box((BAT_WIRE_OD+2.2,1.6,z1-z0),(BAT_NEG_CHANNEL_X,WALL_INNER_Y+0.7,(z0+z1)/2))
+    void=box((BAT_WIRE_OD+0.2,BAT_WIRE_OD+0.4,z1-z0+2),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y+0.15,(z0+z1)/2))
+    parts['chassis']=parts['chassis'].fuse(ribs).cut(void)
+    # Clip for the NTC lead.
     clip=cylinder(2.25,2.5,(6,-11,74.75),(0,0,1)).cut(cylinder(1.02,3,(6,-11,74.5),(0,0,1)))
     clip=clip.cut(box((.9,3,4),(6,-9.5,76)))
     stem=box((2.5,6,2.5),(6,-15.9,76))

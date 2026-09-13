@@ -50,7 +50,7 @@ the report; do not interpret those files as a successful new build.
 | USB-C | GCT USB4105 envelope facing X+, with a custom **6.6 × 13 × 1 mm** horizontal board. Bond the board into the locating shoe and the shoe tabs to the chassis. Its rear stop carries insertion load. |
 | PTT and power | Omron B3F-1000 envelopes in separate carriers bonded to the chassis rails. Trim and insulate terminals within the modeled envelope. Thin adhesive strips retain the switch. |
 | Button caps | TPU diaphragm perimeter bonded to the outer frame/ring. The switch supplies return force; a carrier shoulder limits the center to 0.35 mm travel, including 0.10 mm free play. |
-| Wiring | Individual swept insulation solids with rounded bends; passages through rails retain button/USB leads. Chassis clips support the long battery-negative and NTC runs. |
+| Wiring | Individual swept insulation solids with rounded bends; passages through rails retain button/USB leads. The battery-negative lead lies in a ribbed channel on the inside of the front wall, notched through the saddle webs and top contact carrier. A chassis clip supports the NTC run. |
 
 The mic and LED boards grew from the earlier empty-seat allocations to accommodate
 the headers. Their acoustic/light axes are unchanged. The main-board connector
