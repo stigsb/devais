@@ -19,6 +19,16 @@ uv run cad-preview cad/output/enclosure.stl --views iso  # Single isometric view
 
 After rendering, read the generated PNG (saved next to the STL as `*_preview.png`) to visually inspect the model. Check against the design review checklist in `.claude/skills/cad-skill/design-review.md`.
 
+### Python and the macOS Sandbox
+
+Sandboxed CAD/preview Python processes can fail when accessing macOS UI frameworks,
+including during shutdown. The preview renderer has also failed to find a display
+inside the sandbox; the same command succeeded with host access. If a traceback or
+crash report points to Cocoa, AppKit, pyglet, or display access, retry the same command
+with `sandbox_permissions: "require_escalated"`. Check its exit status and generated
+files. Treat geometry assertions and other Python errors separately; do not dismiss
+them as sandbox failures.
+
 ### PCB Build & Assembly Workflow
 
 The PCB pipeline has a strict build order — each step depends on the previous:

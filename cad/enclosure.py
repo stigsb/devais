@@ -90,8 +90,8 @@ CONTACT_PLATE_THICKNESS = 2.0
 CONTACT_SPACE = 3.0  # Space beyond each cell end for contact/spring + insulation.
 
 # Custom daughterboard seats; these are mechanical design constraints.
-MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT = 12.0, 8.0
-LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 10.0, 6.0
+MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT = 15.0, 8.0
+LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 10.0, 8.0
 AUDIO_BOARD_THICKNESS = 1.6
 SPEAKER_BODY_DIAMETER = 20.0
 SPEAKER_BODY_DEPTH = 4.0

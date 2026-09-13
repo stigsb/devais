@@ -13,6 +13,7 @@ dependencies = [
 [project.scripts]
 cad-generate = "cad.enclosure:main"
 cad-preview = "cad.preview:main"
+cad-assembly = "cad.assembly:main"
 pcb-build = "hardware.pcb_build:build"
 pcb-export = "hardware.pcb_build:export"
 

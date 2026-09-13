@@ -2,6 +2,9 @@
 
 ## Index
 
+Full assembly prototype: see `cad/ASSEMBLY.md` for the PCB, components, harnesses,
+mounting pieces and fit checks. Its exports are in `output/full-assembly/`.
+
 Latest enclosure revision (2026-09-11): diagonal pin/socket joint and chassis mounts;
 see `output/README.md`. The two enclosure context files mark their older content
 as historical. Root `output/` is the current export destination.
