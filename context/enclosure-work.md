@@ -32,7 +32,7 @@ Positions are given from the end they are measured from, as in the source.
 
 | Feature | Face | Size | Position |
 |---|---|---|---|
-| LED holes (2) | Front | 3 diameter | X = 5 and 11, 10 from top |
+| LED holes (2) | Front | 3 diameter | X = 0 and 6, 10 from top |
 | Speaker grille | Front | 19.9 diameter, perforated | Upper edge 20 from top |
 | Microphone | Front | 1.5 acoustic hole, 1.0 inner port | 10 from bottom, X + 1 |
 | Microphone pocket | Front, inside | 4.92 x 3.96, 1.0 deep | Behind the acoustic hole |
@@ -52,7 +52,7 @@ corner radii running 8 at the base to 5.4 at the top, and a dotted grip texture.
   the button opening.
 - Cell envelope 18.6 x 65 at X = -3, Z = 20 to 85, held by two front-wall saddles
   with strap slots. The cover does not retain the cell.
-- Speaker envelope 20 diameter x 4 deep, in a locating cup with tie lugs.
+- Speaker envelope 20 diameter x 5.3 deep, in a locating cup with tie lugs.
 - Daughterboard seats: microphone 15 x 8 x 1.6, LEDs 10 x 8 x 1.6.
 
 These are mechanical envelopes, not validated commercial parts. Contacts,

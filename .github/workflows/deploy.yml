@@ -28,27 +28,29 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install Python dependencies
         run: |
           uv sync
 
-      - name: Install PCB toolchain
+      - name: Generate enclosure and full assembly
         run: |
-          npm install -g @tscircuit/cli
-          cd hardware/pcb && npm install
+          uv run cad-generate
+          uv run cad-assembly
 
-      - name: Generate enclosure STL
+      # PCB artifacts are optional for the site; a tsci failure must not block STL publishing.
+      - name: Install PCB toolchain
+        continue-on-error: true
         run: |
-          uv run python cad/enclosure.py
+          cd hardware/pcb && bun install --frozen-lockfile
 
       - name: Generate PCB artifacts
+        continue-on-error: true
         run: |
           uv run pcb-export
           uv run python3 hardware/pcb/generate_assembly.py
@@ -56,18 +58,11 @@ jobs:
       - name: Create deployment directory
         run: |
           mkdir -p deploy
-          cp cad/output/enclosure.stl deploy/
-          cp cad/output/enclosure_left.stl deploy/
-          cp cad/output/enclosure_right.stl deploy/
-          cp cad/output/large_button.stl deploy/
-          cp hardware/pcb/index.circuit-pcb.svg deploy/
-          cp hardware/pcb/index.circuit-schematic.svg deploy/
-          cp hardware/pcb/assembly-top.svg deploy/
-          cp web/index.html deploy/
-          cp web/enclosure.html deploy/
-          cp web/enclosure_left.html deploy/
-          cp web/enclosure_right.html deploy/
-          cp web/large_button.html deploy/
+          cp web/index.html web/viewer.html deploy/
+          cp output/full-assembly/*_print.stl deploy/
+          cp output/fit_pins.stl output/fit_sockets.stl deploy/
+          cp hardware/pcb/index.circuit-pcb.svg hardware/pcb/index.circuit-schematic.svg hardware/pcb/assembly-top.svg deploy/ || true
+          ls -la deploy
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

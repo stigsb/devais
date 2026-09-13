@@ -44,9 +44,9 @@ the report; do not interpret those files as a successful new build.
 |---|---|
 | Main PCB | Existing 26 × 126 × 1.6 mm slab and ten holes; six M2 × 5 screws. |
 | Battery | Existing Ø18.6 × 65 mm cell position; two straps in new saddle grooves. Contact cylinders and insulating washers reserve the end space. |
-| Speaker | Ø20 × 4 mm envelope and perimeter gasket; removable stepped bridge with two M2 × 5 screws driven along Z. The bridge clears the PCB edge. |
+| Speaker | Ø20 × 5.3 mm envelope (CMS-2053-18SP) and perimeter gasket; removable stepped bridge with two M2 × 5 screws driven along Z. The bridge clears the PCB edge. |
 | Microphone | Custom **15 × 8 × 1.6 mm** board; IM69D130 aligned with X = 1, Z = 10 sound hole. The sideways SH connector sits beside the mic; perimeter tape seals and retains the board. |
-| LEDs | Custom **10 × 8 × 1.6 mm** board; emitters remain at X = 5 and 11, Z = 140. SH socket on the inward face; perimeter tape retains the board. |
+| LEDs | Custom **10 × 8 × 1.6 mm** board; emitters at X = 0 and 6, Z = 140. SH socket on the inward face; perimeter tape retains the board. |
 | USB-C | GCT USB4105 envelope facing X+, with a custom **6.6 × 13 × 1 mm** horizontal board. Bond the board into the locating shoe and the shoe tabs to the chassis. Its rear stop carries insertion load. |
 | PTT and power | Omron B3F-1000 envelopes in separate carriers bonded to the chassis rails. Trim and insulate terminals within the modeled envelope. Thin adhesive strips retain the switch. |
 | Button caps | TPU diaphragm perimeter bonded to the outer frame/ring. The switch supplies return force; a carrier shoulder limits the center to 0.35 mm travel, including 0.10 mm free play. |

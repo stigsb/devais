@@ -7,118 +7,192 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 40px 20px;
             background-color: #f5f5f5;
-        }
-        h1 {
             color: #333;
-            border-bottom: 2px solid #0066cc;
-            padding-bottom: 10px;
         }
-        .model-grid {
+        h1 { border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+        h2 { margin-top: 40px; }
+        p.lead { color: #666; }
+        .parts { list-style: none; padding: 0; margin: 0; }
+        .part {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: 160px 1fr;
             gap: 20px;
-            margin-top: 30px;
-        }
-        .model-card {
+            align-items: center;
             background: white;
             border-radius: 8px;
-            padding: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .model-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        .part canvas {
+            width: 160px;
+            height: 160px;
+            border-radius: 4px;
+            background: #eef1f5;
         }
-        .model-card h2 {
-            margin-top: 0;
-            color: #0066cc;
-            font-size: 1.5em;
-        }
-        .model-card p {
-            color: #666;
-            line-height: 1.6;
-        }
-        .model-card a {
+        .part h3 { margin: 0 0 6px 0; color: #0066cc; font-size: 1.2em; }
+        .part p { margin: 0 0 12px 0; color: #666; line-height: 1.5; }
+        .part .meta { font-size: 0.85em; color: #888; margin-bottom: 12px; }
+        .part a {
             display: inline-block;
-            margin-top: 15px;
-            padding: 10px 20px;
+            padding: 8px 16px;
+            margin-right: 8px;
             background-color: #0066cc;
             color: white;
             text-decoration: none;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            font-size: 14px;
         }
-        .model-card a:hover {
-            background-color: #0052a3;
+        .part a:hover { background-color: #0052a3; }
+        .part a.download { background-color: #28a745; }
+        .part a.download:hover { background-color: #218838; }
+        .pcb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
         }
-        .download-link {
-            background-color: #28a745;
-            margin-left: 10px;
+        .pcb-grid .card {
+            background: white; border-radius: 8px; padding: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .download-link:hover {
-            background-color: #218838;
+        .pcb-grid img { width: 100%; border-radius: 4px; }
+        .pcb-grid h3 { margin: 0 0 10px 0; color: #0066cc; }
+        @media (max-width: 600px) {
+            .part { grid-template-columns: 1fr; }
+            .part canvas { width: 100%; height: 200px; }
         }
     </style>
 </head>
 <body>
     <h1>Devais 3D Models</h1>
-    <p>View and download 3D models for the Devais handheld AI assistant device.</p>
+    <p class="lead">Printable parts for the Devais handheld AI assistant, generated from
+    <code>cad/enclosure.py</code> and <code>cad/assembly.py</code>. All STLs are in print orientation.</p>
 
-    <h2>PCB Design</h2>
-    <div class="model-grid">
-        <div class="model-card">
-            <h2>PCB Layout</h2>
-            <a href="index.circuit-pcb.svg"><img src="index.circuit-pcb.svg" alt="PCB Layout" style="width:100%; border-radius:4px;"></a>
-            <p>Component placement and copper traces.</p>
+    <h2>Printable parts</h2>
+    <ul class="parts" id="parts"></ul>
+
+    <h2>PCB design</h2>
+    <div class="pcb-grid">
+        <div class="card">
+            <h3>PCB layout</h3>
+            <a href="index.circuit-pcb.svg"><img src="index.circuit-pcb.svg" alt="PCB layout"></a>
         </div>
-
-        <div class="model-card">
-            <h2>Schematic</h2>
-            <a href="index.circuit-schematic.svg"><img src="index.circuit-schematic.svg" alt="Schematic" style="width:100%; border-radius:4px;"></a>
-            <p>Circuit schematic with all connections.</p>
+        <div class="card">
+            <h3>Schematic</h3>
+            <a href="index.circuit-schematic.svg"><img src="index.circuit-schematic.svg" alt="Schematic"></a>
         </div>
-
-        <div class="model-card">
-            <h2>Assembly</h2>
-            <a href="assembly-top.svg"><img src="assembly-top.svg" alt="Assembly diagram" style="width:100%; border-radius:4px;"></a>
-            <p>Component assembly diagram for board population.</p>
-        </div>
-    </div>
-
-    <h2>3D Models</h2>
-    <div class="model-grid">
-        <div class="model-card">
-            <h2>Enclosure</h2>
-            <p>Complete assembled enclosure housing the battery, electronics, and controls.</p>
-            <a href="enclosure.html">View 3D Model</a>
-            <a href="enclosure.stl" class="download-link" download>Download STL</a>
-        </div>
-
-        <div class="model-card">
-            <h2>Enclosure Left</h2>
-            <p>Left half of the split enclosure. Snap-fit design for easy assembly.</p>
-            <a href="enclosure_left.html">View 3D Model</a>
-            <a href="enclosure_left.stl" class="download-link" download>Download STL</a>
-        </div>
-
-        <div class="model-card">
-            <h2>Enclosure Right</h2>
-            <p>Right half of the split enclosure. Contains matching snap-fit features.</p>
-            <a href="enclosure_right.html">View 3D Model</a>
-            <a href="enclosure_right.stl" class="download-link" download>Download STL</a>
-        </div>
-
-        <div class="model-card">
-            <h2>Large Button</h2>
-            <p>Push-to-talk button for the device. Provides tactile feedback for voice activation control.</p>
-            <a href="large_button.html">View 3D Model</a>
-            <a href="large_button.stl" class="download-link" download>Download STL</a>
+        <div class="card">
+            <h3>Assembly</h3>
+            <a href="assembly-top.svg"><img src="assembly-top.svg" alt="Assembly diagram"></a>
         </div>
     </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+        // Printable parts. Descriptions follow output/full-assembly/README.md.
+        const PARTS = [
+            { file: 'chassis_print.stl', name: 'Chassis', material: 'PLA/PETG',
+              text: 'Enclosure half carrying the controls, audio openings, PCB rails, cable passages, clips and speaker mount.' },
+            { file: 'cover_print.stl', name: 'Cover', material: 'PLA/PETG',
+              text: 'Enclosure half without electrical mounts. Locates on two pins and closes with two M2 screws.' },
+            { file: 'speaker_bridge_print.stl', name: 'Speaker bridge', material: 'PLA/PETG',
+              text: 'Removable stepped bridge retaining the speaker with two M2 x 5 screws.' },
+            { file: 'USB_shoe_print.stl', name: 'USB shoe', material: 'PLA/PETG',
+              text: 'Locating shoe for the USB-C daughterboard. Bond the board into the shoe and the shoe tabs to the chassis.' },
+            { file: 'PTT_carrier_print.stl', name: 'PTT switch carrier', material: 'PLA/PETG',
+              text: 'Carrier for the push-to-talk tactile switch, bonded to the chassis rails.' },
+            { file: 'PWR_carrier_print.stl', name: 'Power switch carrier', material: 'PLA/PETG',
+              text: 'Carrier for the power tactile switch, bonded to the chassis rails.' },
+            { file: 'PTT_TPU_cap_print.stl', name: 'PTT button cap', material: 'TPU',
+              text: 'Flexible push-to-talk diaphragm. Perimeter bonded to the outer frame.' },
+            { file: 'PWR_TPU_cap_print.stl', name: 'Power button cap', material: 'TPU',
+              text: 'Flexible power button diaphragm. Perimeter bonded to the outer ring.' },
+            { file: 'fit_pins.stl', name: 'Fit coupon: pins', material: 'PLA/PETG',
+              text: 'Clearance test piece. Print before the shells and mate with the socket block.' },
+            { file: 'fit_sockets.stl', name: 'Fit coupon: sockets', material: 'PLA/PETG',
+              text: 'Socket block with 0.20, 0.30 and 0.40 mm diametral clearances. The enclosure uses 0.30.' },
+        ];
+
+        const SIZE = 320; // thumbnail render size in device pixels
+        const list = document.getElementById('parts');
+        const cards = PARTS.map(part => {
+            const li = document.createElement('li');
+            li.className = 'part';
+            li.innerHTML = `
+                <canvas width="${SIZE}" height="${SIZE}" aria-label="${part.name} thumbnail"></canvas>
+                <div>
+                    <h3>${part.name}</h3>
+                    <p>${part.text}</p>
+                    <div class="meta">${part.material} &middot; <span class="dims">loading&hellip;</span></div>
+                    <a href="viewer.html?model=${encodeURIComponent(part.file)}">View 3D</a>
+                    <a href="${part.file}" class="download" download>Download STL</a>
+                </div>`;
+            list.appendChild(li);
+            return li;
+        });
+
+        // One shared WebGL renderer draws every thumbnail, then copies it to the
+        // card's 2D canvas, staying under the browser's WebGL context limit.
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(SIZE, SIZE, false);
+        const scene = new THREE.Scene();
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(1, 1.5, 1); scene.add(key);
+        const fill = new THREE.DirectionalLight(0xffffff, 0.4); fill.position.set(-1, -0.5, -1); scene.add(fill);
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 2000);
+        const material = new THREE.MeshPhongMaterial({ color: 0x5b8fc7, specular: 0x222222, shininess: 30 });
+        const loader = new STLLoader();
+
+        function renderThumbnail(geometry, canvas, dimsEl) {
+            geometry.computeBoundingBox();
+            const box = geometry.boundingBox;
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            dimsEl.textContent = `${size.x.toFixed(1)} x ${size.y.toFixed(1)} x ${size.z.toFixed(1)} mm`;
+
+            // Show the part with Z (print axis) up, viewed from an isometric-ish angle.
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.sub(center);
+            const group = new THREE.Group();
+            group.add(mesh);
+            group.rotation.x = -Math.PI / 2;
+            scene.add(group);
+
+            const radius = size.length() / 2;
+            const dist = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.1;
+            camera.position.set(1, 0.8, 1).normalize().multiplyScalar(dist);
+            camera.lookAt(0, 0, 0);
+            camera.near = dist - radius * 2; camera.far = dist + radius * 2;
+            camera.updateProjectionMatrix();
+
+            renderer.render(scene, camera);
+            canvas.getContext('2d').drawImage(renderer.domElement, 0, 0);
+            scene.remove(group);
+        }
+
+        PARTS.forEach((part, i) => {
+            const canvas = cards[i].querySelector('canvas');
+            const dimsEl = cards[i].querySelector('.dims');
+            loader.load(part.file,
+                geometry => renderThumbnail(geometry, canvas, dimsEl),
+                undefined,
+                () => { dimsEl.textContent = 'file not found'; });
+        });
+    </script>
 </body>
 </html>

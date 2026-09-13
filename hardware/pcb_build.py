@@ -6,11 +6,16 @@ import sys
 
 PCB_DIR = os.path.join(os.path.dirname(__file__), "pcb")
 CIRCUIT_FILE = "index.circuit.tsx"
+# tsci is the tscircuit package binary, installed by `bun install` in PCB_DIR.
+TSCI = os.path.join(PCB_DIR, "node_modules", ".bin", "tsci")
 
 
 def run_tsci(*args: str) -> int:
+    if not os.path.exists(TSCI):
+        print(f"{TSCI} not found; run `bun install` in {PCB_DIR}", file=sys.stderr)
+        return 1
     result = subprocess.run(
-        ["tsci", *args],
+        [TSCI, *args],
         cwd=PCB_DIR,
     )
     return result.returncode

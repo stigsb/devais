@@ -39,7 +39,7 @@ index.circuit.tsx  →(tsci build)→  dist/index/circuit.json  →(generate_ass
 ```
 
 1. **Edit** `hardware/pcb/index.circuit.tsx` (source of truth)
-2. **Build** with `cd hardware/pcb && npx tsci build` — validates circuit, writes `dist/index/circuit.json`
+2. **Build** with `uv run pcb-build` (run `bun install` in `hardware/pcb` once) — validates circuit, writes `dist/index/circuit.json`
 3. **Generate assembly** with `uv run python3 hardware/pcb/generate_assembly.py` — reads circuit.json, writes SVG/PNG
 
 **Important:** If circuit.json is stale (e.g. from cache), delete `hardware/pcb/dist/` and rebuild. The assembly generator reads board dimensions and component positions from circuit.json, so stale data produces incorrect diagrams.
@@ -56,7 +56,7 @@ uv run pcb-export         # Build + export SVG/schematic/assembly/netlist
 - **Use `connections` prop on dense chips:** Reduces trace object count and gives the autorouter better information. Combine with explicit `<trace>` elements only where needed.
 - **`pinAttributes` are broken (as of current tscircuit):** The camelCase props (`requiresPower`, `providesGround`, etc.) are accepted by TypeScript types but NOT serialized to circuit JSON `source_port` entries. Only `mustBeConnected` is mapped. DRC checks read circuit JSON, so pin attribute warnings cannot be suppressed. This is a tscircuit/core bug.
 - **Via proximity warnings are autorouter-generated:** Can't be fixed from source placement. Minor DRC issue, not a functional problem.
-- **Always regenerate assembly after build:** Run `uv run python3 hardware/pcb/generate_assembly.py` after every `npm run build` to keep assembly-top.svg/png in sync.
+- **Always regenerate assembly after build:** Run `uv run python3 hardware/pcb/generate_assembly.py` after every `uv run pcb-build` to keep assembly-top.svg/png in sync.
 
 ## Project Purpose
 

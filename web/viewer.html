@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devais 3D Models</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        #container { width: 100vw; height: 100vh; }
+        #controls {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        #controls h3 { margin: 0 0 10px 0; color: #333; }
+        #controls a {
+            display: inline-block; margin-right: 10px; padding: 8px 16px;
+            background-color: #0066cc; color: white; text-decoration: none;
+            border-radius: 4px; font-size: 14px;
+        }
+        #controls a:hover { background-color: #0052a3; }
+        #controls .download { background-color: #28a745; }
+        #controls .download:hover { background-color: #218838; }
+        #info {
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px; border-radius: 8px; color: #666; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="controls">
+        <h3 id="title">Model</h3>
+        <a href="index.html">&larr; Back</a>
+        <a id="download" href="#" class="download" download>Download STL</a>
+    </div>
+    <div id="info">
+        Left click + drag to rotate | Right click + drag to pan | Scroll to zoom
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+        // The STL is chosen with ?model=<file>. Only bare filenames are accepted.
+        const params = new URLSearchParams(location.search);
+        const file = (params.get('model') || '').replace(/[^A-Za-z0-9_.-]/g, '');
+        if (!file) {
+            document.getElementById('title').textContent = 'No model given';
+            throw new Error('missing ?model=');
+        }
+        const title = file.replace(/_print\.stl$|\.stl$/, '').replace(/_/g, ' ');
+        document.getElementById('title').textContent = title;
+        document.title = `${title} - Devais 3D Models`;
+        document.getElementById('download').href = file;
+
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const light1 = new THREE.DirectionalLight(0xffffff, 0.8); light1.position.set(1, 1, 1); scene.add(light1);
+        const light2 = new THREE.DirectionalLight(0xffffff, 0.4); light2.position.set(-1, -1, -1); scene.add(light2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        new STLLoader().load(file, geometry => {
+            const mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({
+                color: 0x5b8fc7, specular: 0x222222, shininess: 30 }));
+            geometry.computeBoundingBox();
+            const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+            geometry.translate(-center.x, -center.y, -center.z);
+            // Print axis Z up on screen.
+            mesh.rotation.x = -Math.PI / 2;
+            scene.add(mesh);
+            const size = geometry.boundingBox.getSize(new THREE.Vector3());
+            const dist = Math.max(size.x, size.y, size.z) / 2 / Math.tan(camera.fov * Math.PI / 360) * 1.5;
+            camera.position.set(dist * 0.6, dist * 0.5, dist * 0.6);
+            camera.lookAt(0, 0, 0);
+        }, undefined, () => {
+            document.getElementById('title').textContent = `${title} (file not found)`;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        (function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        })();
+    </script>
+</body>
+</html>

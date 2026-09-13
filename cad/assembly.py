@@ -24,6 +24,7 @@ SWITCH_SIZE = (3.4, 6.4, 6.4)  # Omron B3F-1000 body, includes +/-0.2 width tole
 SWITCH_THROW = 0.25  # A070-E1.pdf; tune actuator gap with printed shims.
 ACTUATOR_GAP = 0.10
 SPEAKER_Z = e.DEVICE_HEIGHT - e.SPEAKER_TOP_OFFSET - e.SPEAKER_DIAMETER / 2
+LED_SOCKET_X = e.LED_BOARD_X - 2.2  # SH socket behind the LED board, offset towards X+
 
 
 def box(size, center):
@@ -120,7 +121,7 @@ def build():
         contact(name,'chassis','M2 closure threads engage the blind pilot',e.seam_cylinder(u,z,1.01,-.01,3.52).val())
 
     # Audio boards, bottom-port mic with acoustic through-hole, and LED emitters.
-    for name,x,z,w,h in [('mic',1,10,e.MIC_BOARD_WIDTH,e.MIC_BOARD_HEIGHT),('LED',8,140,e.LED_BOARD_WIDTH,e.LED_BOARD_HEIGHT)]:
+    for name,x,z,w,h in [('mic',1,10,e.MIC_BOARD_WIDTH,e.MIC_BOARD_HEIGHT),('LED',e.LED_BOARD_X,140,e.LED_BOARD_WIDTH,e.LED_BOARD_HEIGHT)]:
         b=box((w,1.6,h),(x,-16.05,z))
         if name=='mic':
             b=b.cut(cylinder(.5,2,(x,-17.1,z),(0,1,0)))
@@ -134,10 +135,10 @@ def build():
     add('IM69D130',mic,'#d0d0d0')
     add('mic_J_SH_mated',box((7.95,3,6.5),(-5.275,-13.75,10.75)),'#edba65')
     # LED socket behind the board, offset towards X+ to avoid the speaker cup.
-    add('LED_J_SH_mated',box((5.5,3,8.5),(5.8,-13.75,139.75)),'#edba65')
+    add('LED_J_SH_mated',box((5.5,3,8.5),(LED_SOCKET_X,-13.75,139.75)),'#edba65')
     for x in e.LED_POSITIONS_X:
         add(f'LED_{x}',box((2,.9,2),(x,-17.30,140)),'#eee6ab')
-    add('speaker',cylinder(10,4,(0,-18.3,SPEAKER_Z),(0,1,0)),'#50565e')
+    add('speaker',cylinder(10,e.SPEAKER_BODY_DEPTH,(0,-18.3,SPEAKER_Z),(0,1,0)),'#50565e')
     gasket=cylinder(10,.1,(0,-18.4,SPEAKER_Z),(0,1,0)).cut(cylinder(9,.2,(0,-18.45,SPEAKER_Z),(0,1,0)))
     add('speaker_gasket',gasket,'#333333')
 
@@ -220,9 +221,14 @@ def build():
         groove=cylinder(10.15,2.8,(-3,0,z-1.4),(0,0,1)).cut(cylinder(9.45,3,(-3,0,z-1.5),(0,0,1)))
         parts['chassis']=parts['chassis'].cut(groove)
     # A stepped bridge clears the PCB edge. Vertical screws avoid the PCB rails.
-    bridge_z=SPEAKER_Z+5
-    bridge=box((23.9,1.2,3),(-2.55,-13.7,bridge_z))
-    bridge=bridge.fuse(box((2.5,1.2,3),(10.65,-14.0,bridge_z)))
+    # The plate sits behind the 5.3 mm speaker body; two risers reach forward to
+    # the ears through the gaps between the speaker rim and the PCB slab.
+    # Raised clear of the J_LED connector below it.
+    bridge_z=SPEAKER_Z+9
+    bridge=box((23.9,1.2,3),(-2.55,-11.8,bridge_z))
+    bridge=bridge.fuse(box((2.5,3.1,3),(-13.25,-12.75,bridge_z)))
+    bridge=bridge.fuse(box((2.0,3.1,3),(8.5,-12.75,bridge_z)))
+    bridge=bridge.fuse(box((3.5,1.2,3),(10.15,-14.0,bridge_z)))
     bridge=bridge.fuse(box((2.6,1.2,3),(13.2,-13.7,bridge_z)))
     outside=e.create_octagonal_prism(e.DEVICE_HEIGHT,e.DEVICE_WIDTH,e.HALF_LONG_SIDE,e.FILLET_RADIUS).val()
     for x in (-12,12):
@@ -239,6 +245,7 @@ def build():
         screw=cylinder(2,1.8,(x,-15.5,bridge_z+1.5),(0,0,1)).fuse(cylinder(1,5,(x,-15.5,bridge_z+1.5),(0,0,-1)))
         add(name,screw)
         contact(name,'chassis','M2 threads engage speaker lug pilot',cylinder(1.01,3.52,(x,-15.5,bridge_z+.01),(0,0,-1)))
+    bridge=bridge.cut(cylinder(10.3,8,(0,-19,SPEAKER_Z),(0,1,0)))
     # Rebate the bridge, preserving the bearing plane under its mounting ears.
     parts['chassis']=parts['chassis'].cut(bridge)
     add('speaker_bridge',bridge,'#df984e'); prints['speaker_bridge']=bridge
@@ -251,7 +258,7 @@ def build():
         'PWR': (2, WIRE_OD, [(8.4,0,38.25),(8.4,0,33),(8.4,15,33),(13.9,15,33),(13.9,15,44),(12.9,3.85,44)], 'J_PWR','PWR_terminals'),
         'PTT': (2, WIRE_OD, [(8.4,4.5,115.75),(8.4,4.5,120),(8.4,15,120),(13.9,15,120),(13.9,15,105),(12.9,3.85,105)], 'J_PTT','PTT_terminals'),
         'SPK': (2, WIRE_OD, [(8.4,-3,105.75),(8.4,-3,98),(0,-3,98),(0,-10,98),(5,-10,SPEAKER_Z-4),(5,-14.3,SPEAKER_Z-4)], 'J_SPK','speaker'),
-        'LED': (3, WIRE_OD, [(8.4,-9,118.25),(4,-9,118.25),(4,-9,127),(5.8,-9,132),(5.8,-13.75,132),(5.8,-13.75,135.5)], 'J_LED','LED_J_SH_mated'),
+        'LED': (3, WIRE_OD, [(8.4,-9,118.25),(4,-9,118.25),(4,-9,127),(LED_SOCKET_X,-9,132),(LED_SOCKET_X,-13.75,132),(LED_SOCKET_X,-13.75,135.5)], 'J_LED','LED_J_SH_mated'),
         'BAT_POS': (1, BAT_WIRE_OD, [(1.9,2,101),(-3,2,101),(-3,8,95),(-3,8,86.5),(-3,2,86.5)], 'J_BAT','cell_positive_contact'),
         'BAT_NEG': (1, BAT_WIRE_OD, [(1.9,4,101),(-3,4,101),(-3,16,94),(-3,16,7),(-3,8,7),(-3,8,18.5),(-3,2,18.5)], 'J_BAT','cell_negative_contact'),
         'NTC': (2, WIRE_OD, [(8.4,-7,97.25),(8.4,-7,91),(6,-11,91),(6,-11,58),(1,-11,58),(-2,-9.8,58)], 'J_NTC','NTC'),
@@ -286,7 +293,7 @@ def build():
     parts['chassis']=parts['chassis'].fuse(stem).fuse(clip)
     # Header bearing areas must actually fit their custom boards; plugs may overhang.
     for board,probe in [('mic_PCB',box((4.95,.1,6.5),(-3.775,-15.3,10.75))),
-                        ('LED_PCB',box((5.5,.1,5.5),(5.8,-15.3,141.25))),
+                        ('LED_PCB',box((5.5,.1,5.5),(LED_SOCKET_X,-15.3,141.25))),
                         ('USB_PCB',box((6.5,5.5,.1),(15.1,-1.5,28.395)))]:
         assert probe.cut(parts[board]).Volume()<1e-5, f'{board}: header bearing area off board'
     return parts,colors,contacts,prints,lengths

@@ -20,7 +20,8 @@ CORNER_COORD = DEVICE_WIDTH / 2.0
 
 # Components
 LED_DIAMETER = 3.0  # 3mm holes for WS2812B-2020 (2mm) with light diffusion margin
-LED_POSITIONS_X = [5.0, 11.0]  # Two RGB LEDs, both on right (chassis) half
+LED_POSITIONS_X = [0.0, 6.0]  # Two RGB LEDs; X=6 keeps the hole clear of the front-face chamfer
+LED_BOARD_X = sum(LED_POSITIONS_X) / len(LED_POSITIONS_X)  # Daughterboard centred on the emitters
 LED_TOP_OFFSET = 10.0
 
 MIC_HOLE_DIAMETER = 1.5
@@ -94,7 +95,7 @@ MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT = 15.0, 8.0
 LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 10.0, 8.0
 AUDIO_BOARD_THICKNESS = 1.6
 SPEAKER_BODY_DIAMETER = 20.0
-SPEAKER_BODY_DEPTH = 4.0
+SPEAKER_BODY_DEPTH = 5.3  # Same Sky CMS-2053-18SP; the 4.0 mm CMS-2004 also fits
 MOUNT_CLEARANCE = 0.3
 
 # --- Geometry Helpers ---
@@ -481,7 +482,7 @@ def add_component_mounts(chassis):
     # Recessed seats locate custom mic/LED boards. Removable adhesive on the
     # perimeter retains them without blocking the acoustic/light windows.
     for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
-                    (8,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
+                    (LED_BOARD_X,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
         seat = cq.Workplane('XY').box(w+4,3.5,h+4).translate((x,-17.5,z))
         pocket = cq.Workplane('XY').box(w+MOUNT_CLEARANCE,4,h+MOUNT_CLEARANCE).translate((x,-15.0,z))
         # Preserve the acoustic/light path through the center of the seat.
@@ -491,8 +492,11 @@ def add_component_mounts(chassis):
 
     # Speaker cup: front gasket seat, rear insertion, cable-tie retention.
     z = DEVICE_HEIGHT-SPEAKER_TOP_OFFSET-SPEAKER_DIAMETER/2
+    # 0.6 front recess plus the full body; the rear face stops at the PCB edge.
     cup = cq.Workplane('XZ', origin=(0,-18.9,z)).circle(
-        SPEAKER_BODY_DIAMETER/2+2).circle(SPEAKER_BODY_DIAMETER/2+MOUNT_CLEARANCE).extrude(-5.0)
+        SPEAKER_BODY_DIAMETER/2+2).circle(SPEAKER_BODY_DIAMETER/2+MOUNT_CLEARANCE).extrude(-(SPEAKER_BODY_DEPTH+0.6))
+    # The narrow top of the ring is trimmed back so the LED harness passes behind it.
+    cup = cup.cut(cq.Workplane('XY').box(8,0.9,12).translate((0,-13.45,z+14)))
     chassis = chassis.union(cup)
     for x in (-12,12):
         lug = cq.Workplane('XY').box(4,5,7).translate((x,-16.5,z))
@@ -551,7 +555,7 @@ def check_assembly(chassis, cover):
         SPEAKER_BODY_DIAMETER/2).extrude(-SPEAKER_BODY_DEPTH)
     components = [('speaker', speaker)]
     for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
-                    (8,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
+                    (LED_BOARD_X,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
         components.append(('daughterboard',cq.Workplane('XY').box(w,AUDIO_BOARD_THICKNESS,h).translate(
             (x,-17+AUDIO_BOARD_THICKNESS/2,z))))
     for name, component in components:
