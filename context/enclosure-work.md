@@ -1,225 +1,109 @@
-> Update 2026-09-11: The implementation now uses an offset diagonal split
-> (X−Y = −4), locating pins with blind sockets, screw closure, and chassis-only
-> component supports. Generated files are in root `output/`. See
-> `output/README.md` for dimensions, checks and unfinished hardware details.
-> Historical completion claims and X=0 joint descriptions below are superseded.
+# Enclosure implementation status
 
-# DevAIs Enclosure Implementation Progress
+**Revision 2026-09-11.** Source: `cad/enclosure.py` (673 lines). All dimensions
+are millimetres.
 
-**Date:** 2026-01-18
-**Status:** All features implemented and complete
+`output/README.md` is authoritative for the generated files, the joint design and
+the list of unfinished hardware. Read it first. This file covers the enclosure
+parameters and the CadQuery approach behind them.
 
-## Reference Documentation
-- **Detailed Plan:** `/Users/stig/.claude/plans/ticklish-hopping-corbato.md`
-- **Reference Image:** `/Users/stig/git/stigsb/devais/proto-image.png`
-- **Implementation File:** `/Users/stig/git/stigsb/devais/cad/enclosure.py`
+## Shape
 
-## What Was Accomplished ✅
-
-### 1. Fundamental Geometry Change (COMPLETE)
-- ✅ Converted from **55mm cylinder** to **40mm octagonal prism**
-- ✅ Implemented 7:3 ratio for long sides (24.9mm) : short chamfers (10.7mm)
-- ✅ 150mm height along Y axis
-- ✅ 2.5mm wall thickness
-- ✅ Top edge filleted (2mm radius)
-- ✅ Proper hollowing with octagonal inner profile
-
-### 2. Component Repositioning (COMPLETE)
-All components moved from cylindrical coordinate system to octagonal with correct positions:
-
-**Front Face:**
-- ✅ **LEDs:** 3× 3mm, 10mm from top, 8mm spacing
-- ✅ **Speaker Grille:** Upper portion, 19.9mm diameter, 10mm below LEDs
-- ✅ **Microphone:** 1.5mm acoustic hole, 10mm from bottom
-- ✅ **INMP441 Mounting:** Internal pocket (4.72×3.76mm), 1mm acoustic port
-
-**Right Side:**
-- ✅ **Power Button:** 8mm diameter, 25mm from bottom
-- ✅ **USB-C Port:** 12mm from bottom
-- ✅ **Large Button Cutout:** Rectangular recess for button base
-
-### 3. Large Button Component (COMPLETE)
-- ✅ **Dimensions:** 24.9mm wide × 45mm tall (30% of device height)
-- ✅ **45° bevel/taper:** Base 4mm deep → tapered top
-- ✅ **Dotted texture:** Grid pattern on top surface with rounded boundary checking
-- ✅ **Separate component:** Exports as `large_button.stl`
-- ✅ **Raised Edge Frame:** 1.6mm width frame with proper corner radii
-- ✅ **Frame protrusion:** Extends 1.6mm beyond outer surface with 0.3mm edge fillet
-
-### 4. Power Button Feature (COMPLETE)
-- ✅ **8mm diameter cutout:** 25mm from bottom on right side
-- ✅ **Raised ring:** Concentric outer ring (11mm OD, 8.5mm ID, 1mm protrusion)
-- ✅ **Safety feature:** Prevents accidental power-off
-
-### 5. Model Generation (WORKING)
-- ✅ Successfully generates and exports 2 files:
-  - `cad/output/enclosure.stl`
-  - `cad/output/large_button.stl`
-
-## Implementation Status Summary
-
-All major features are now implemented in the code (869 lines):
-
-### ✅ Completed Features:
-1. **Basic Geometry:**
-   - Octagonal prism (40mm flat-to-flat, 150mm height)
-   - 2.5mm wall thickness with proper hollowing
-   - 4mm filleted vertical edges
-   - Top and bottom edge fillets (line 760)
-
-2. **Front Face Features:**
-   - 3× LED holes (3mm, 8mm spacing, 10mm from top)
-   - Speaker grille (perforated pattern, 19.9mm diameter)
-   - Microphone (1.5mm acoustic hole, mounting pocket 4.72×3.76mm, 10mm from bottom)
-
-3. **Right Side Features:**
-   - Power button (8mm) with raised protective ring
-   - USB-C port (9.5×3.7mm stadium shape) with wall thinning pocket
-   - Large button opening with raised frame (1.6mm width, extends 1.6mm outward)
-
-4. **Large Button Component:**
-   - 24.9×45mm base dimensions
-   - 4mm beveled section with 45° taper
-   - Dotted texture on top surface
-   - Proper rounded corners (8mm base → 5.4mm top)
-
-### ⚠️ Potential Areas for Review:
-1. **Visual Verification:** Model hasn't been visually compared to reference image to verify proportions
-2. **Component Spacing:** Should verify all component positions match design intent
-3. **Print Tolerances:** May need adjustment for specific 3D printer characteristics
-
-## Geometry Calculations (VERIFIED)
+An octagonal prism, 40 flat-to-flat and 150 tall, made by chamfering a 40 mm
+square at 45 degrees. Long and short sides are in a 7:3 ratio.
 
 ```
-Octagon formed by chamfering 40mm square at 45°:
-- Original square side: 40mm
-- Chamfer distance: 7.55mm
-- Long side length: 24.9mm (40 - 2×7.55)
-- Short chamfer: 10.7mm (7.55×√2)
-- Ratio: 24.9/10.7 = 2.33 ≈ 7/3 ✓
-
-Battery fit check:
-- 18650: 18.6mm diameter × 65mm length
-- Interior space: 35mm flat-to-flat (40 - 2×2.5)
-- Clearance: 16.4mm ✓ FITS COMFORTABLY
+Chamfer depth:      7.55   = (40 - 24.9) / 2
+Long side:         24.9    = 40 - 2 x 7.55        (LONG_SIDE_LENGTH)
+Short chamfer:     10.7    = 7.55 x sqrt(2)
+Ratio:             24.9 / 10.7 = 2.33, that is 7/3
 ```
 
-## Current File Structure
+Walls are 1.6 thick. Vertical edges are filleted at 4.
 
-```
-cad/
-├── enclosure.py          # Main implementation (869 lines)
-├── output/
-│   ├── enclosure.stl     # Main enclosure body
-│   └── large_button.stl  # Separate button component
-proto-image.png           # Reference image
-context/
-└── enclosure-work.md     # This file
-.claude/plans/
-└── ticklish-hopping-corbato.md  # Detailed spec & plan
-```
+The shell splits along a diagonal seam at X - Y = -4. The chassis half keeps the
+controls on the X+ face and the audio openings on the Y- face. The cover carries
+no electrical mounts. Two pins in blind sockets locate the halves; two screws
+clamp them.
 
-## Next Steps (Optional Refinements)
+## Openings
 
-### If Visual Issues Are Found:
-1. **Visual Verification**
-   - Load `cad/output/enclosure.stl` in 3D viewer
-   - Compare against `proto-image.png` reference
-   - Document any positioning/sizing discrepancies
-   - Adjust parameters in enclosure.py as needed
+Positions are given from the end they are measured from, as in the source.
 
-### Possible Refinements:
-1. **Print Testing**
-   - Test print to verify tolerances
-   - Check button fit (0.5mm clearance may need adjustment)
-   - Verify component mounting features
+| Feature | Face | Size | Position |
+|---|---|---|---|
+| LED holes (2) | Front | 3 diameter | X = 5 and 11, 10 from top |
+| Speaker grille | Front | 19.9 diameter, perforated | Upper edge 20 from top |
+| Microphone | Front | 1.5 acoustic hole, 1.0 inner port | 10 from bottom, X + 1 |
+| Microphone pocket | Front, inside | 4.92 x 3.96, 1.0 deep | Behind the acoustic hole |
+| Power button | Right | 8 diameter, raised ring | 44 from bottom |
+| USB-C port | Right | 9.5 x 3.7 stadium, 1.6 corners | 31 from bottom |
+| Large button opening | Right | 24.9 x 45, 1.6 frame | Centre 105 from bottom |
 
-2. **Additional Details (if desired)**
-   - Add screw mounting posts for PCB
-   - Add alignment features for assembly
-   - Add cable routing channels
-   - Design bottom cap/cover
+The microphone hole is shifted 1 mm in X so it stays clear of the seam. Both LED
+holes sit on the chassis half for the same reason.
 
-3. **Optimization**
-   - Reduce perforated holes count for faster generation
-   - Simplify geometry if print issues occur
-   - Adjust wall thickness if strength is concern
+The large button is a separate part: 24.9 x 45 with a 4 mm deep 45-degree bevel,
+corner radii running 8 at the base to 5.4 at the top, and a dotted grip texture.
 
-## Code Health
+## Internal mounts
 
-**Implementation Status:**
-- ✅ All features fully implemented (869 lines)
-- ✅ Octagon geometry generation with calculated dimensions
-- ✅ Hollowing with proper wall thickness and offset2D
-- ✅ All component holes (LEDs, mic, speaker, buttons, USB-C)
-- ✅ Raised features (button frame, power button ring)
-- ✅ Separate button component with lofted bevel
-- ✅ INMP441 mounting pocket structure
-- ✅ STL export (removed STEP export as not needed)
+- Main board envelope 26 x 126 x 1.6, resting on continuous rails, with bosses at
+  the button opening.
+- Cell envelope 18.6 x 65 at X = -3, Z = 20 to 85, held by two front-wall saddles
+  with strap slots. The cover does not retain the cell.
+- Speaker envelope 20 diameter x 4 deep, in a locating cup with tie lugs.
+- Daughterboard seats: microphone 15 x 8 x 1.6, LEDs 10 x 8 x 1.6.
 
-**Code Quality:**
-- ✅ Well-commented functions with detailed explanations
-- ✅ Parametric design (constants at top for easy adjustment)
-- ✅ Clear separation of concerns (one function per feature)
-- ✅ Helper functions for complex geometry (octagonal prism)
-- ✅ Proper coordinate system (Z = vertical, XY = cross-section)
-- ✅ No known TODOs or incomplete features
+These are mechanical envelopes, not validated commercial parts. Contacts,
+springs, insulation and the acoustic gasket are still unspecified.
 
-## Key Learnings & Design Decisions
-
-1. **CadQuery Techniques Used:**
-   - `.offset2D()` for creating inner octagon profile with proper wall thickness
-   - `.edges("|Z")` selectors for filleting vertical edges
-   - `.workplane(offset=...)` for positioning features on faces
-   - Loft between two wire profiles for button bevel
-   - Boolean operations (union/cut) for adding/removing features
-   - `.pushPoints()` for efficient multi-hole patterns
-
-2. **Design Decisions:**
-   - Explicit point lists for octagon (clear and maintainable)
-   - Loft method for tapered button (handles variable corner radii)
-   - Perforated speaker grille instead of single cutout (acoustic benefit)
-   - Frame construction via outer-cut-inner for precise corner fillets
-   - Stadium-shaped USB-C cutout with filleted edges
-
-3. **Geometry Challenges Solved:**
-   - Hollowing octagon while maintaining exact wall thickness
-   - Creating raised frame with different inner/outer corner radii
-   - Button loft with changing corner radii (8mm → 5.4mm)
-   - Dotted texture pattern constrained to rounded rectangle
-   - Wall thinning pocket for USB-C connector clearance
-
-## Commands to Work With Models
+## Generating and checking
 
 ```bash
-# Navigate to project
-cd /Users/stig/git/stigsb/devais
-
-# Regenerate models
-python3 cad/enclosure.py
-
-# View in slicer/viewer
-open cad/output/enclosure.stl
-open cad/output/large_button.stl
-
-# Or use online viewer
-# Upload to https://www.viewstl.com/
+uv run cad-generate                          # writes output/
+uv run cad-preview output/chassis_print.stl  # multi-view PNG next to the STL
 ```
 
-## Component Summary
+Exports land in `output/`: `chassis` and `cover` in both assembled and print
+orientations as STL and STEP, the `fit_pins`/`fit_sockets` clearance coupon,
+`pcb_template.step`, and `assembly.step`.
 
-| Feature | Location | Dimensions | Status |
-|---------|----------|------------|---------|
-| Enclosure | N/A | 40mm × 40mm × 150mm (octagonal) | ✅ Complete |
-| Wall Thickness | All sides | 2.5mm | ✅ Complete |
-| LEDs (3×) | Front, top | 3mm Ø, 8mm spacing, 10mm from top | ✅ Complete |
-| Speaker Grille | Front, center | 19.9mm Ø perforated | ✅ Complete |
-| Microphone | Front, bottom | 1.5mm Ø + mounting pocket | ✅ Complete |
-| Power Button | Right side | 8mm Ø + raised ring | ✅ Complete |
-| USB-C Port | Right side | 9.5×3.7mm, 12mm from bottom | ✅ Complete |
-| Large Button Opening | Right side | 24.9×45mm + raised frame | ✅ Complete |
-| Large Button | Separate | 24.9×45×8mm with bevel & texture | ✅ Complete |
+The generator checks that each shell is one valid connected solid, tests shell,
+battery, PCB and audio envelopes for interference, confirms the cover clears the
+pins and that the pins restrain it in two directions, and verifies blind socket
+floors. Export requires each STL to be a single watertight mesh. It does not
+repair geometry or hide failures.
 
----
+Print the fit coupon before the shells. It carries three socket clearances of
+0.20, 0.30 and 0.40; the enclosure uses 0.30.
 
-**Summary:** All features fully implemented. The octagonal enclosure (40mm flat-to-flat × 150mm height) includes all component cutouts, mounting features, and raised details. The large button is a separate component with beveled edges and textured grip surface. Both models export successfully to STL format and are ready for 3D printing or further refinement.
+## Outstanding work
+
+- Button caps need retention, return force, travel stops and an actuator matched
+  to the chosen switch.
+- USB connector reach and populated board component heights are unverified.
+- Print tolerances and support removal have not been tested on a printer.
+- A higher-fidelity LED display is deferred to V2. The two 3 mm openings stay as
+  they are. See `docs/led-indicator-research-2026-09-13.md`.
+
+## CadQuery notes
+
+Techniques this model depends on:
+
+- `.offset2D()` builds the inner octagon so the wall thickness stays exact.
+- `.edges("|Z")` selects the vertical edges for filleting.
+- `.workplane(offset=...)` places features on a chosen face.
+- A loft between two wire profiles makes the button bevel, which lets the corner
+  radius change from 8 to 5.4 along its height.
+- `.pushPoints()` patterns the speaker perforations in one operation.
+
+Decisions worth keeping:
+
+- The octagon is an explicit point list rather than a computed polygon. It is
+  easier to read and to change.
+- The speaker grille is perforated rather than a single cutout, which holds the
+  face rigid and performs better acoustically.
+- The button frame is built by cutting an inner profile from an outer one, so
+  inner and outer corner radii can differ.
+- Cuts overshoot the wall by 5 mm (`CUT_OVERSHOOT`) so they always penetrate.
