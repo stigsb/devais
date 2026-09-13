@@ -51,87 +51,51 @@ LARGE_BTN_OPENING_RADIUS = 8.5
 LARGE_BTN_FRAME_WIDTH = 1.6
 LARGE_BTN_FRAME_PROTRUSION = 1.6 # Beyond outer surface
 
-# Tongue-and-groove rails (alignment for split halves)
-# Runs along Z on front/back wall seams for X=0 split alignment.
-TONGUE_WIDTH = 1.0            # In Y direction, within 1.6mm wall
-TONGUE_HEIGHT = 0.8           # Protrusion in X direction from split face
-TONGUE_CLEARANCE = 0.15       # Per side for FDM tolerance
-GROOVE_WIDTH = TONGUE_WIDTH + 2 * TONGUE_CLEARANCE
-GROOVE_DEPTH = TONGUE_HEIGHT + TONGUE_CLEARANCE
-TONGUE_Z_MARGIN = 5.0         # Inset from top/bottom to avoid interfering with fillets
+# Diagonal seam: X-Y=-4, chassis keeps the X+ and Y- active faces.
+SPLIT_OFFSET = -4.0
+PIN_DIAMETER = 3.0
+PIN_LENGTH = 3.0
+PIN_CLEARANCE = 0.30  # Diametral; calibrate using the exported coupon.
+JOINT_GAP = 0.20
+JOINT_PAD_RADIUS = 4.0
+JOINT_PAD_DEPTH = 5.0
+PIN_POSITIONS = [(-18.8, 5.5), (18.8, 144.5)]  # seam-local u, global Z
+SCREW_POSITIONS = [(-18.8, 144.5), (18.8, 5.5)]
+SCREW_PILOT_DIA = 1.6  # Prototype M2 plastic-thread pilot; tune for chosen screw.
+SCREW_CLEARANCE = 2.3
+SCREW_HEAD_CLEARANCE = 4.5
 
-# Cantilever snap clips (retention for split halves)
-# Beams on cover (left) half flex in X to engage hooks in chassis (right) half pockets.
-SNAP_BEAM_LENGTH = 8.0        # Along Z axis
-SNAP_BEAM_WIDTH = 3.0         # Along Y axis (within wall)
-SNAP_BEAM_THICKNESS = 0.8     # In X direction
-SNAP_HOOK_DEPTH = 0.4         # Additional Y protrusion at hook tip
-SNAP_HOOK_HEIGHT = 1.0        # Z extent of hook
-SNAP_HOOK_RAMP = 1.5          # Z extent of 30° lead-in ramp
-SNAP_CLEARANCE = 0.2          # Clearance around beam in pocket
-SNAP_POCKET_DEPTH = SNAP_BEAM_THICKNESS + SNAP_HOOK_DEPTH + SNAP_CLEARANCE
+# Prospective main-board envelope, not the existing 36 mm electrical layout.
+PCB_WIDTH = 26.0
+PCB_HEIGHT = 126.0
+PCB_THICKNESS = 1.6
+PCB_FACE_X = 11.5
+PCB_Y_OFFSET = 75.0
+PCB_MOUNTING_HOLES = [(y, z-75) for y in (-10, 10) for z in (16, 38, 97, 115, 134)]
+BOSS_OD = 4.5
+PCB_RAIL_DEPTH = 4.8
 
-# Battery cradle (18650: 18.6mm diameter x 65mm length)
-# Cradle is on the cover (X<0) half with >180° snap-in grips.
-# Battery center is offset toward the cover wall so the rib's -X side
-# overlaps with the wall (no struts needed) and the +X lips provide snap-in.
 BATTERY_DIAMETER = 18.6
 BATTERY_LENGTH = 65.0
-BATTERY_CRADLE_RADIUS = BATTERY_DIAMETER / 2 + 0.2  # 0.2mm clearance
-BATTERY_CRADLE_THICKNESS = 1.5  # Rib wall thickness (thin enough to flex for snap-in)
-BATTERY_CRADLE_RIB_WIDTH = 3.0  # Rib width along Z axis
-BATTERY_CRADLE_ARC_DEG = 210.0  # >180° for snap-in (gives ~0.25mm interference)
-BATTERY_CRADLE_BOTTOM_Z = WALL_THICKNESS + 2.0  # 2mm above bottom wall for spring clearance
-# Battery center X: positioned so rib outer surface overlaps wall by 0.5mm
-_INNER_WALL_X = DEVICE_WIDTH / 2.0 - WALL_THICKNESS
-_OUTER_R = BATTERY_CRADLE_RADIUS + BATTERY_CRADLE_THICKNESS
-BATTERY_CENTER_X = -(_INNER_WALL_X + 0.5 - _OUTER_R)  # ~ -7.9mm
-# Rib Z positions: bottom, middle, top of battery zone (avoiding contact platforms)
-BATTERY_CRADLE_RIB_Z = [
-    BATTERY_CRADLE_BOTTOM_Z + 8.0,           # Near bottom (above spring contact)
-    BATTERY_CRADLE_BOTTOM_Z + 34.0,          # Middle
-    BATTERY_CRADLE_BOTTOM_Z + 60.0,          # Near top (below plate contact)
-]
+BATTERY_CENTER_X = -3.0
+BATTERY_BOTTOM_Z = 20.0
+BATTERY_CLEARANCE = 0.3
+BATTERY_CRADLE_THICKNESS = 1.8
+BATTERY_CRADLE_RIB_WIDTH = 4.0
+BATTERY_CRADLE_RIB_Z = (25.0, 69.0)
+BATTERY_STRAP_WIDTH = 3.5
+# Contact carriers intentionally accept adhesive copper/nickel contact strips;
+# no unsupported claim of compatibility with a particular purchased holder.
+CONTACT_PLATE_THICKNESS = 2.0
+CONTACT_SPACE = 3.0  # Space beyond each cell end for contact/spring + insulation.
 
-# Battery contacts (Keystone 5222/5224 style)
-# Spring contact (negative) at bottom, plate contact (positive) at top.
-# Connected to main board via 2-wire JST cable.
-CONTACT_WIDTH = 12.0           # Contact base plate width
-CONTACT_DEPTH = 10.0           # Contact base plate depth (along Z)
-CONTACT_FACE_SPACING = 69.5    # Inner face-to-face distance (cell OAL + spring preload)
-CONTACT_SCREW_SPACING = 7.5    # M2 mounting hole center-to-center
-CONTACT_SCREW_PILOT = 1.6      # M2 pilot hole diameter for self-tapping in plastic
-CONTACT_BOSS_OD = 4.5          # Screw boss outer diameter
-CONTACT_BOSS_HEIGHT = 3.0      # Boss protrusion height from platform face
-CONTACT_PLATFORM_THICKNESS = 2.0  # Platform wall thickness
-CONTACT_WIRE_CHANNEL = 3.0     # Wire channel width/height for JST cable routing
-
-# PCB mounting bosses (M2 self-tapping screws into plastic)
-# Board: 36x140mm, mounted vertically on right wall inner surface.
-# Coordinate mapping: enclosure_Y = pcb_X, enclosure_Z = pcb_Y + 75
-PCB_Y_OFFSET = 75.0           # Board center pcbY=0 maps to enclosure Z=75mm
-SCREW_PILOT_DIA = 1.6         # M2 self-tapping pilot hole diameter
-BOSS_OD = 4.5                 # Boss outer diameter (1.45mm wall around pilot hole)
-BOSS_STANDOFF = 2.0           # PCB standoff from inner wall surface
-
-# PCB mounting hole positions (pcbX, pcbY) from index.circuit.tsx
-# pcbX=±10 keeps bosses on the flat face (within ±12.45mm half-long-side)
-PCB_MOUNTING_HOLES = [
-    (-10, -59),  # MH1:  USB-C zone left
-    ( 10, -59),  # MH2:  USB-C zone right
-    (-10, -37),  # MH3:  mid-lower left
-    ( 10, -37),  # MH4:  mid-lower right
-    (-10,  22),  # MH5:  mid-upper left
-    ( 10,  22),  # MH6:  mid-upper right
-    (-10,  40),  # MH7:  PTT zone left
-    ( 10,  40),  # MH8:  PTT zone right
-    (-10,  67),  # MH9:  top left
-    ( 10,  67),  # MH10: top right
-]
-
-# Z positions for contact faces (battery-facing surfaces)
-CONTACT_BOTTOM_Z = BATTERY_CRADLE_BOTTOM_Z              # Spring contact face
-CONTACT_TOP_Z = CONTACT_BOTTOM_Z + CONTACT_FACE_SPACING # Plate contact face
+# Custom daughterboard seats; these are mechanical design constraints.
+MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT = 12.0, 8.0
+LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 10.0, 6.0
+AUDIO_BOARD_THICKNESS = 1.6
+SPEAKER_BODY_DIAMETER = 20.0
+SPEAKER_BODY_DEPTH = 4.0
+MOUNT_CLEARANCE = 0.3
 
 # --- Geometry Helpers ---
 
@@ -453,317 +417,157 @@ def create_large_button():
 
     return button
 
-def add_battery_cradle(half):
-    """
-    Thin-walled arc cradle ribs on the cover (X<0) half for an 18650 battery.
-    Battery center is offset toward the cover wall (BATTERY_CENTER_X) so the
-    rib's -X side overlaps with the inner wall for solid fusion, while the
-    +X lips are thin enough (1.5mm) to flex for snap-in insertion.
-    """
-    inner_r = BATTERY_CRADLE_RADIUS
-    outer_r = inner_r + BATTERY_CRADLE_THICKNESS  # Thin wall, not solid fill
-    cx = BATTERY_CENTER_X
-
-    # The arc spans from (90 - overhang) to (270 + overhang) degrees,
-    # where overhang = (arc_deg - 180) / 2. Centered on 180° (-X direction).
-    overhang_deg = (BATTERY_CRADLE_ARC_DEG - 180.0) / 2.0
-    cut_half_angle = 90.0 - overhang_deg  # Degrees from +X axis to cut boundary
-
-    # Wedge to cut: sector from -cut_half_angle to +cut_half_angle (the +X opening)
-    cut_angle_rad = math.radians(cut_half_angle)
-    s = outer_r + 5  # Extends beyond the ring
-    wedge_pts = [
-        (0, 0),
-        (s, s * math.tan(cut_angle_rad)),
-        (s, -s * math.tan(cut_angle_rad)),
-    ]
-
-    for z_pos in BATTERY_CRADLE_RIB_Z:
-        # Thin ring centered on battery position
-        rib = (
-            cq.Workplane("XY")
-            .workplane(offset=z_pos)
-            .center(cx, 0)
-            .circle(outer_r)
-            .circle(inner_r)
-            .extrude(BATTERY_CRADLE_RIB_WIDTH)
-        )
-
-        # Cut the +X sector wedge (relative to battery center)
-        wedge = (
-            cq.Workplane("XY")
-            .workplane(offset=z_pos - 0.5)
-            .center(cx, 0)
-            .polyline(wedge_pts).close()
-            .extrude(BATTERY_CRADLE_RIB_WIDTH + 1)
-        )
-        rib = rib.cut(wedge)
-
-        half = half.union(rib)
-
-    return half
+def seam_plane(depth=0):
+    n = 1 / math.sqrt(2)
+    return cq.Plane(origin=(SPLIT_OFFSET/2 + depth*n,
+                            -SPLIT_OFFSET/2 - depth*n, 0),
+                    xDir=(n, n, 0), normal=(n, -n, 0))
 
 
-def add_battery_contact_mounts(half):
-    """
-    Add mounting platforms for Keystone-style battery contacts on the cover half.
-    Bottom platform: spring contact (negative terminal), spring faces +Z.
-    Top platform: plate contact (positive terminal), plate faces -Z.
-    Each platform has M2 screw bosses and a wire channel for JST cable routing.
-    """
-    inner_wall_x = DEVICE_WIDTH / 2.0 - WALL_THICKNESS  # Inner wall distance from center
-    overlap = 0.5  # Into wall for solid boolean fusion
-
-    for is_top in [False, True]:
-        if is_top:
-            # Top platform: contact face points down (-Z), platform above the face
-            face_z = CONTACT_TOP_Z
-            platform_z = face_z  # Platform extends upward from contact face
-            boss_dir = -1  # Bosses extend downward toward battery
-        else:
-            # Bottom platform: contact face points up (+Z), platform below the face
-            face_z = CONTACT_BOTTOM_Z
-            platform_z = face_z - CONTACT_PLATFORM_THICKNESS
-            boss_dir = 1  # Bosses extend upward toward battery
-
-        # Platform: spans from inner wall (with overlap) to past battery center
-        # to support the screw bosses centered on the battery axis.
-        cx = BATTERY_CENTER_X
-        platform_width_y = CONTACT_WIDTH + 2.0  # Contact width + 1mm margin each side
-        boss_overshoot = CONTACT_BOSS_OD / 2 + 0.5
-        platform_x_min = -(inner_wall_x + overlap)
-        platform_x_max = cx + boss_overshoot
-        platform_extent_x = platform_x_max - platform_x_min
-        platform_center_x = (platform_x_min + platform_x_max) / 2
-
-        platform = (
-            cq.Workplane("XY")
-            .workplane(offset=platform_z)
-            .center(platform_center_x, 0)
-            .rect(platform_extent_x, platform_width_y)
-            .extrude(CONTACT_PLATFORM_THICKNESS)
-        )
-        half = half.union(platform)
-
-        # M2 screw bosses on the battery-facing side of the platform.
-        # Bosses embed 0.5mm into the platform for solid boolean fusion.
-        embed = 0.5
-        for screw_sign in [-1, 1]:
-            screw_y = screw_sign * CONTACT_SCREW_SPACING / 2
-
-            # Solid boss (embedded into platform, centered on battery axis)
-            boss_start_z = face_z - embed if boss_dir > 0 else face_z + embed
-            boss = (
-                cq.Workplane("XY")
-                .workplane(offset=boss_start_z)
-                .center(cx, screw_y)
-                .circle(CONTACT_BOSS_OD / 2)
-                .extrude(boss_dir * (CONTACT_BOSS_HEIGHT + embed))
-            )
-            half = half.union(boss)
-
-            # Pilot hole through boss and platform
-            hole_z_start = platform_z - 0.5 if not is_top else face_z - 0.5
-            hole_depth = CONTACT_PLATFORM_THICKNESS + CONTACT_BOSS_HEIGHT + 1
-            pilot = (
-                cq.Workplane("XY")
-                .workplane(offset=hole_z_start)
-                .center(cx, screw_y)
-                .circle(CONTACT_SCREW_PILOT / 2)
-                .extrude(hole_depth)
-            )
-            half = half.cut(pilot)
-
-        # Wire channel: notch in the platform edge for JST cable routing
-        # Positioned at the -X edge (toward the wall) so wires run along the wall
-        channel = (
-            cq.Workplane("XY")
-            .workplane(offset=platform_z - 0.5)
-            .center(-inner_wall_x + CONTACT_WIRE_CHANNEL / 2, 0)
-            .rect(CONTACT_WIRE_CHANNEL + 1, CONTACT_WIRE_CHANNEL)
-            .extrude(CONTACT_PLATFORM_THICKNESS + 1)
-        )
-        half = half.cut(channel)
-
-    return half
+def seam_cylinder(u, z, radius, start, depth):
+    return cq.Workplane(seam_plane(start)).center(u, z).circle(radius).extrude(depth)
 
 
-def add_pcb_mounting_bosses(half):
-    """
-    Add short cylindrical bosses with M2 pilot holes to the chassis (right) half.
-    Bosses protrude from the inner right wall inward (-X direction).
-    PCB back rests on boss faces; M2 self-tapping screws go from PCB front
-    through the 2.2mm board holes and thread into the pilot holes.
-    All holes at pcbX=±10, well within the flat face (±12.45mm).
-    """
-    inner_wall_x = DEVICE_WIDTH / 2.0 - WALL_THICKNESS
-    overlap = 0.5  # Into wall for solid boolean fusion
-
-    for pcb_x, pcb_y in PCB_MOUNTING_HOLES:
-        enc_y = float(pcb_x)
-        enc_z = float(pcb_y) + PCB_Y_OFFSET
-
-        # Boss: short cylinder from inner wall inward toward X=0
-        boss = (
-            cq.Workplane("YZ")
-            .workplane(offset=inner_wall_x + overlap)
-            .center(enc_y, enc_z)
-            .circle(BOSS_OD / 2)
-            .extrude(-(BOSS_STANDOFF + overlap))
-        )
-        half = half.union(boss)
-
-        # Pilot hole: drilled from PCB-facing end through boss into wall
-        pcb_face_x = inner_wall_x - BOSS_STANDOFF
-        pilot = (
-            cq.Workplane("YZ")
-            .workplane(offset=pcb_face_x)
-            .center(enc_y, enc_z)
-            .circle(SCREW_PILOT_DIA / 2)
-            .extrude(BOSS_STANDOFF + WALL_THICKNESS)
-        )
-        half = half.cut(pilot)
-
-    return half
+def board_envelope():
+    return cq.Workplane('XY').box(PCB_THICKNESS, PCB_WIDTH, PCB_HEIGHT).translate(
+        (PCB_FACE_X-PCB_THICKNESS/2, 0, PCB_Y_OFFSET))
 
 
-# --- Split for Printing ---
+def battery_envelope():
+    return cq.Workplane('XY').center(BATTERY_CENTER_X, 0).circle(
+        BATTERY_DIAMETER/2).extrude(BATTERY_LENGTH).translate((0, 0, BATTERY_BOTTOM_Z))
+
+
+def add_component_mounts(chassis):
+    # Continuous rails carry bosses in the button opening back to intact wall.
+    rail_bottom, rail_top = 13.0, 137.0
+    for y in (-10, 10):
+        rail = cq.Workplane('XY').box(PCB_RAIL_DEPTH, BOSS_OD, rail_top-rail_bottom).translate(
+            (PCB_FACE_X+PCB_RAIL_DEPTH/2, y, (rail_top+rail_bottom)/2))
+        chassis = chassis.union(rail)
+    for y, board_z in PCB_MOUNTING_HOLES:
+        z = board_z + PCB_Y_OFFSET
+        # Only the three intact-wall stations extend all the way to the shell.
+        depth = 18.9-PCB_FACE_X if z in (16, 38, 134) else PCB_RAIL_DEPTH
+        boss = cq.Workplane('YZ', origin=(PCB_FACE_X, y, z)).circle(BOSS_OD/2).extrude(depth)
+        chassis = chassis.union(boss)
+        pilot = cq.Workplane('YZ', origin=(PCB_FACE_X-0.1, y, z)).circle(
+            SCREW_PILOT_DIA/2).extrude(min(depth-0.8, 4.0)+0.1)
+        chassis = chassis.cut(pilot)
+
+    # Open saddles, tied to the front wall. Straps retain the cell cover-off.
+    radius = BATTERY_DIAMETER/2 + BATTERY_CLEARANCE
+    for z in BATTERY_CRADLE_RIB_Z:
+        saddle = cq.Workplane('XY').center(BATTERY_CENTER_X, 0).circle(
+            radius+BATTERY_CRADLE_THICKNESS).circle(radius).extrude(BATTERY_CRADLE_RIB_WIDTH)
+        saddle = saddle.intersect(cq.Workplane('XY').box(60, 30, 10).translate((0,-15,2)))
+        web = cq.Workplane('XY').box(16, 10, BATTERY_CRADLE_RIB_WIDTH).translate(
+            (BATTERY_CENTER_X,-14, BATTERY_CRADLE_RIB_WIDTH/2))
+        web = web.cut(cq.Workplane('XY').center(BATTERY_CENTER_X,0).circle(radius).extrude(10))
+        saddle = saddle.union(web).translate((0,0,z))
+        # Two through-slots allow a small cable tie around the cell and saddle.
+        for x in (BATTERY_CENTER_X-6, BATTERY_CENTER_X+6):
+            slot = cq.Workplane('XY').box(BATTERY_STRAP_WIDTH,2,10).translate((x,-15,z+2))
+            saddle = saddle.cut(slot)
+        chassis = chassis.union(saddle)
+    for z in (BATTERY_BOTTOM_Z-CONTACT_SPACE-CONTACT_PLATE_THICKNESS,
+              BATTERY_BOTTOM_Z+BATTERY_LENGTH+CONTACT_SPACE):
+        carrier = cq.Workplane('XY').box(14,22,CONTACT_PLATE_THICKNESS).translate(
+            (BATTERY_CENTER_X,-8,z+CONTACT_PLATE_THICKNESS/2))
+        # Contact strip/wire passes through the carrier; add insulating liner.
+        slot = cq.Workplane('XY').box(5,1.5,6).translate((BATTERY_CENTER_X,0,z+1))
+        chassis = chassis.union(carrier.cut(slot))
+
+    # Recessed seats locate custom mic/LED boards. Removable adhesive on the
+    # perimeter retains them without blocking the acoustic/light windows.
+    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
+                    (8,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
+        seat = cq.Workplane('XY').box(w+4,3.5,h+4).translate((x,-17.5,z))
+        pocket = cq.Workplane('XY').box(w+MOUNT_CLEARANCE,4,h+MOUNT_CLEARANCE).translate((x,-15.0,z))
+        # Preserve the acoustic/light path through the center of the seat.
+        window = cq.Workplane('XY').box(w-2,8,h-2).translate((x,-18,z))
+        seat = seat.cut(pocket).cut(window)
+        chassis = chassis.union(seat)
+
+    # Speaker cup: front gasket seat, rear insertion, cable-tie retention.
+    z = DEVICE_HEIGHT-SPEAKER_TOP_OFFSET-SPEAKER_DIAMETER/2
+    cup = cq.Workplane('XZ', origin=(0,-18.9,z)).circle(
+        SPEAKER_BODY_DIAMETER/2+2).circle(SPEAKER_BODY_DIAMETER/2+MOUNT_CLEARANCE).extrude(-5.0)
+    chassis = chassis.union(cup)
+    for x in (-12,12):
+        lug = cq.Workplane('XY').box(4,5,7).translate((x,-16.5,z))
+        slot = cq.Workplane('XY').box(2,8,BATTERY_STRAP_WIDTH).translate((x,-16.5,z))
+        chassis = chassis.union(lug.cut(slot))
+    return chassis
+
 
 def split_enclosure(enclosure):
-    """
-    Split enclosure into right (chassis) and left (cover) halves along X=0.
-    Right half (X>0): All electronics, battery, buttons, ports
-    Left half (X<0): Purely mechanical cover
+    """Offset diagonal joint with two round pins, blind sockets and M2 closure."""
+    positive = cq.Workplane(seam_plane()).center(0,75).rect(200,300).extrude(100)
+    negative = cq.Workplane(seam_plane(-JOINT_GAP)).center(0,75).rect(200,300).extrude(-100)
+    # Clip seam pads to the original outside envelope so none protrude.
+    envelope = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
+    envelope = envelope.edges('<Z or >Z').fillet(FILLET_RADIUS)
+    for u,z in PIN_POSITIONS + SCREW_POSITIONS:
+        pad = seam_cylinder(u,z,JOINT_PAD_RADIUS,-JOINT_PAD_DEPTH,2*JOINT_PAD_DEPTH)
+        enclosure = enclosure.union(pad.intersect(envelope))
+    chassis, cover = enclosure.intersect(positive), enclosure.intersect(negative)
+    for u,z in PIN_POSITIONS:
+        pin = seam_cylinder(u,z,PIN_DIAMETER/2,0.3,-PIN_LENGTH-0.3)
+        pin = pin.faces('<(1,-1,0)').edges().chamfer(0.35)
+        chassis = chassis.union(pin)
+        socket = seam_cylinder(u,z,(PIN_DIAMETER+PIN_CLEARANCE)/2,0.1,-PIN_LENGTH-0.6)
+        cover = cover.cut(socket)
+    for u,z in SCREW_POSITIONS:
+        chassis = chassis.cut(seam_cylinder(u,z,SCREW_PILOT_DIA/2,-0.1,4.1))
+        cover = cover.cut(seam_cylinder(u,z,SCREW_CLEARANCE/2,0.1,-50))
+        cover = cover.cut(seam_cylinder(u,z,SCREW_HEAD_CLEARANCE/2,-2.5,-50))
+    # Clip internal mounts to the exterior while preserving the raised controls.
+    chassis = chassis.union(add_component_mounts(chassis).intersect(envelope))
+    # Trim only the frame corner that would extend below the diagonal bed face.
+    bed_depth = (CORNER_COORD+HALF_LONG_SIDE-SPLIT_OFFSET)/math.sqrt(2)
+    bed_limit = cq.Workplane(seam_plane(bed_depth)).center(0,75).rect(200,300).extrude(-100)
+    chassis = chassis.intersect(bed_limit)
+    return chassis, cover
 
-    Joint system (no glue, repeatable open/close):
-    1. Tongue-and-groove rails along front/back wall seams → alignment
-    2. Cantilever snap clips at 2 Z positions per wall → retention
-    """
-    # --- Step 1: Split into halves at X=0 ---
-    s = 300
-    pos_x_tool = cq.Workplane("XY").transformed(offset=(s / 2, 0, s / 2 - 50)).box(s, s, s)
-    neg_x_tool = cq.Workplane("XY").transformed(offset=(-s / 2, 0, s / 2 - 50)).box(s, s, s)
 
-    right_half = enclosure.cut(neg_x_tool)  # remove X<0 → keep X>0 (chassis)
-    left_half = enclosure.cut(pos_x_tool)   # remove X>0 → keep X<0 (cover)
+def print_orientation(part, cover=False):
+    # Lay the opposite diagonal chamfer on the bed, cavities upward.
+    part = part.rotate((0,0,0),(0,0,1),45).rotate((0,0,0),(0,1,0),-90 if cover else 90)
+    box = part.val().BoundingBox()
+    return part.translate((-box.center.x,-box.center.y,-box.zmin))
 
-    # Wall center Y for front/back walls
-    wall_cy = CORNER_COORD - WALL_THICKNESS / 2  # 19.2mm
 
-    # --- Step 2: Tongue-and-groove rails on front/back walls ---
-    # Tongue on cover (left) half split face, groove in chassis (right) half.
-    # Runs along Z, inset from top/bottom to avoid fillet zones.
-    tongue_z_start = TONGUE_Z_MARGIN
-    tongue_z_end = DEVICE_HEIGHT - TONGUE_Z_MARGIN
-    tongue_z_len = tongue_z_end - tongue_z_start
-    tongue_z_center = (tongue_z_start + tongue_z_end) / 2
+def check_assembly(chassis, cover):
+    for name, part in [('chassis',chassis),('cover',cover)]:
+        assert part.val().isValid(), f'{name}: invalid BREP'
+        assert part.solids().size() == 1, f'{name}: disconnected mounting features'
+    assert chassis.intersect(cover).val().Volume() < 1e-5, 'shells collide'
+    for name, envelope in [('PCB',board_envelope()),('battery',battery_envelope())]:
+        for part in (chassis,cover):
+            assert part.intersect(envelope).val().Volume() < 1e-5, f'{name} collides with shell/mounts'
+    speaker_z = DEVICE_HEIGHT-SPEAKER_TOP_OFFSET-SPEAKER_DIAMETER/2
+    speaker = cq.Workplane('XZ',origin=(0,-18.3,speaker_z)).circle(
+        SPEAKER_BODY_DIAMETER/2).extrude(-SPEAKER_BODY_DEPTH)
+    components = [('speaker', speaker)]
+    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
+                    (8,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
+        components.append(('daughterboard',cq.Workplane('XY').box(w,AUDIO_BOARD_THICKNESS,h).translate(
+            (x,-17+AUDIO_BOARD_THICKNESS/2,z))))
+    for name, component in components:
+        for solid in (chassis,cover,board_envelope(),battery_envelope()):
+            assert solid.intersect(component).val().Volume() < 1e-5, f'{name} interference'
+    for u,z in PIN_POSITIONS:
+        shaft = seam_cylinder(u,z,PIN_DIAMETER/2,-0.4,-2.0)
+        for delta in ((0.5/math.sqrt(2),0.5/math.sqrt(2),0),(0,0,0.5)):
+            assert cover.intersect(shaft.translate(delta)).val().Volume() > 0.01, 'pin fails to locate in two directions'
+        floor = seam_cylinder(u,z,0.5,-3.8,-0.3)
+        assert cover.intersect(floor).val().Volume() > 0.2, 'socket is not blind'
+    # Cover must slide off along the pin axis without catching chassis features.
+    for distance in (0.5, 2, 4, 10, 25, 50):
+        moved = cover.translate((-distance/math.sqrt(2),distance/math.sqrt(2),0))
+        assert chassis.intersect(moved).val().Volume() < 1e-5, f'cover catches at {distance} mm'
 
-    for sign in [1, -1]:  # front (+Y) and back (-Y) walls
-        y = sign * wall_cy
-
-        # Tongue: rectangular bar on cover (left) half, protruding from X=0 into chassis half (+X)
-        # YZ workplane normal is +X, so extrude(positive) goes in +X
-        tongue = (cq.Workplane("YZ").center(y, tongue_z_center)
-                  .rect(TONGUE_WIDTH, tongue_z_len)
-                  .extrude(TONGUE_HEIGHT))
-        left_half = left_half.union(tongue)
-
-        # Groove: matching slot cut into chassis (right) half at X=0 face
-        groove = (cq.Workplane("YZ").center(y, tongue_z_center)
-                  .rect(GROOVE_WIDTH, tongue_z_len)
-                  .extrude(GROOVE_DEPTH))
-        right_half = right_half.cut(groove)
-
-    # --- Step 3: Cantilever snap clips on front/back walls ---
-    # Snap beams on cover (left) half, pockets in chassis (right) half.
-    # Beam attached at top, hook at bottom (free end).
-    # 2 per wall (front and back), at Z = 45 and Z = 135.
-    snap_z_positions = [45, 135]
-
-    for sign in [1, -1]:  # front (+Y) and back (-Y) walls
-        y = sign * wall_cy
-        for z_attach in snap_z_positions:
-            z_hook = z_attach - SNAP_BEAM_LENGTH  # Free end with hook
-
-            # --- Beam on cover (left) half ---
-            # The beam protrudes from the split face (X=0) into the chassis half (+X).
-            # It's a thin cantilever that can flex in -X when the hook is pushed.
-            beam_x_center = SNAP_BEAM_THICKNESS / 2  # center of beam in +X
-            beam_z_center = z_attach - SNAP_BEAM_LENGTH / 2
-
-            beam = (cq.Workplane("XY")
-                    .transformed(offset=(beam_x_center, y, beam_z_center))
-                    .box(SNAP_BEAM_THICKNESS, SNAP_BEAM_WIDTH, SNAP_BEAM_LENGTH))
-            left_half = left_half.union(beam)
-
-            # Hook at free end: additional protrusion in +X
-            hook_x_center = SNAP_BEAM_THICKNESS + SNAP_HOOK_DEPTH / 2
-            hook_z_center = z_hook + SNAP_HOOK_HEIGHT / 2
-
-            hook = (cq.Workplane("XY")
-                    .transformed(offset=(hook_x_center, y, hook_z_center))
-                    .box(SNAP_HOOK_DEPTH, SNAP_BEAM_WIDTH, SNAP_HOOK_HEIGHT))
-            left_half = left_half.union(hook)
-
-            # Ramp on hook: angled lead-in for easy insertion.
-            ramp_z_center = z_hook + SNAP_HOOK_HEIGHT + SNAP_HOOK_RAMP / 2
-            ramp = (cq.Workplane("XY")
-                    .transformed(offset=(hook_x_center, y, ramp_z_center))
-                    .box(SNAP_HOOK_DEPTH, SNAP_BEAM_WIDTH, SNAP_HOOK_RAMP))
-            left_half = left_half.union(ramp)
-
-            # Cut the ramp into a wedge shape: full hook depth at bottom, zero at top.
-            ramp_cut_angle = math.atan2(SNAP_HOOK_DEPTH, SNAP_HOOK_RAMP)
-            ramp_cut_size = SNAP_HOOK_RAMP + SNAP_HOOK_DEPTH
-            ramp_cut = (cq.Workplane("YZ")
-                        .transformed(
-                            offset=(SNAP_BEAM_THICKNESS + SNAP_HOOK_DEPTH,
-                                    y,
-                                    ramp_z_center),
-                            rotate=(math.degrees(ramp_cut_angle), 0, 0))
-                        .box(ramp_cut_size, SNAP_BEAM_WIDTH + 1, ramp_cut_size))
-            left_half = left_half.cut(ramp_cut)
-
-            # --- Pocket in chassis (right) half ---
-            pocket_x_depth = SNAP_POCKET_DEPTH
-            pocket_x_center = pocket_x_depth / 2
-            pocket_z_len = SNAP_BEAM_LENGTH + 2 * SNAP_CLEARANCE
-            pocket_z_center = beam_z_center
-
-            pocket = (cq.Workplane("XY")
-                      .transformed(offset=(pocket_x_center, y, pocket_z_center))
-                      .box(pocket_x_depth,
-                           SNAP_BEAM_WIDTH + 2 * SNAP_CLEARANCE,
-                           pocket_z_len))
-            right_half = right_half.cut(pocket)
-
-            # Shallow pocket (beam depth) with deeper notch at hook zone
-            shallow_pocket = (cq.Workplane("XY")
-                              .transformed(offset=(SNAP_BEAM_THICKNESS / 2, y, pocket_z_center))
-                              .box(SNAP_BEAM_THICKNESS + SNAP_CLEARANCE,
-                                   SNAP_BEAM_WIDTH + 2 * SNAP_CLEARANCE,
-                                   pocket_z_len))
-            right_half = right_half.cut(shallow_pocket)
-
-            # Deep notch at hook zone
-            hook_notch_z_len = SNAP_HOOK_HEIGHT + SNAP_HOOK_RAMP + SNAP_CLEARANCE
-            hook_notch_z_center = z_hook + hook_notch_z_len / 2
-            hook_notch = (cq.Workplane("XY")
-                          .transformed(offset=(pocket_x_center, y, hook_notch_z_center))
-                          .box(pocket_x_depth,
-                               SNAP_BEAM_WIDTH + 2 * SNAP_CLEARANCE,
-                               hook_notch_z_len))
-            right_half = right_half.cut(hook_notch)
-
-    # --- Step 4: Battery cradle and contact mounts on cover (left) half ---
-    # Added after split so snap-in lips can extend past X=0.
-    left_half = add_battery_cradle(left_half)
-    left_half = add_battery_contact_mounts(left_half)
-
-    # --- Step 5: PCB mounting bosses on chassis (right) half ---
-    right_half = add_pcb_mounting_bosses(right_half)
-
-    return right_half, left_half
 
 # --- Main Build ---
 
@@ -814,27 +618,56 @@ def build_enclosure():
 
     return enclosure
 
+def fit_coupon():
+    """Same upright pin/socket orientation as shell prints, three clearances."""
+    pins = cq.Workplane('XY').box(36,10,2,centered=(True,True,False))
+    sockets = cq.Workplane('XY').box(36,10,5,centered=(True,True,False))
+    for x, clearance in zip((-12,0,12),(0.2,PIN_CLEARANCE,0.4)):
+        pin = cq.Workplane('XY',origin=(x,0,2)).circle(PIN_DIAMETER/2).extrude(PIN_LENGTH)
+        pins = pins.union(pin.faces('>Z').edges().chamfer(0.35))
+        hole = cq.Workplane('XY',origin=(x,0,5)).circle((PIN_DIAMETER+clearance)/2).extrude(-PIN_LENGTH-0.5)
+        sockets = sockets.cut(hole)
+    return pins, sockets
+
+
+def export_stl(part, path):
+    import trimesh
+    cq.exporters.export(part, str(path), tolerance=0.02, angularTolerance=0.1)
+    mesh = trimesh.load(path, force='mesh')
+    # OCC's pole tessellation produces zero-area faces. Remove only those;
+    # never fill holes or reshape a failed export to conceal invalid geometry.
+    mesh.update_faces(mesh.nondegenerate_faces())
+    mesh.remove_unreferenced_vertices()
+    assert mesh.is_watertight and mesh.is_winding_consistent, f'Bad STL: {path}'
+    assert len(mesh.split()) == 1, f'Disconnected STL: {path}'
+    mesh.export(path)
+
+
 def main():
-    output_dir = Path("cad/output")
+    output_dir = Path('output')
     output_dir.mkdir(parents=True, exist_ok=True)
+    chassis, cover = split_enclosure(build_enclosure())
+    check_assembly(chassis, cover)
+    for name, part in [('chassis',chassis),('cover',cover)]:
+        for suffix, shape in [('assembled',part),('print',print_orientation(part,name=='cover'))]:
+            path = output_dir / f'{name}_{suffix}'
+            export_stl(shape, path.with_suffix('.stl'))
+            cq.exporters.export(shape, str(path.with_suffix('.step')))
+            print(f'Exported {path}: one valid solid', flush=True)
+    for name, part in zip(('fit_pins','fit_sockets'), fit_coupon()):
+        export_stl(part, output_dir/f'{name}.stl')
+    template = board_envelope()
+    for y, z in PCB_MOUNTING_HOLES:
+        template = template.cut(cq.Workplane('YZ',origin=(PCB_FACE_X+1,y,z+PCB_Y_OFFSET)).circle(1.1).extrude(-5))
+    cq.exporters.export(template,str(output_dir/'pcb_template.step'))
+    assembly = cq.Assembly()
+    assembly.add(chassis,name='chassis',color=cq.Color(0.6,0.7,0.8))
+    assembly.add(cover,name='cover',color=cq.Color(0.7,0.7,0.7))
+    assembly.add(template,name='proposed_pcb',color=cq.Color(0.1,0.5,0.2))
+    assembly.add(battery_envelope(),name='cell_envelope',color=cq.Color(0.2,0.3,0.8))
+    assembly.export(str(output_dir/'assembly.step'))
+    print('Assembly checks passed', flush=True)
 
-    print("Generating enclosure...")
-    enclosure = build_enclosure()
-    cq.exporters.export(enclosure, str(output_dir / "enclosure.stl"))
-    print("Exported enclosure.stl")
 
-    print("Splitting enclosure for printing...")
-    right_half, left_half = split_enclosure(enclosure)
-    cq.exporters.export(right_half, str(output_dir / "enclosure_right.stl"))
-    print("Exported enclosure_right.stl")
-    cq.exporters.export(left_half, str(output_dir / "enclosure_left.stl"))
-    print("Exported enclosure_left.stl")
-
-    print("Generating large button...")
-    button = create_large_button()
-    cq.exporters.export(button, str(output_dir / "large_button.stl"))
-    print("Exported large_button.stl")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

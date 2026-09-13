@@ -1,5 +1,12 @@
 # Devais Main PCB
 
+> **Current design proposal (2026-09-13):** see [DESIGN.md](DESIGN.md) for the
+> 26 × 126 mm chassis-mounted board, castellated radio module, and JST-connected
+> peripherals. `design.py` checks its mechanical allocations. The electrical
+> source below remains an older, incompatible sketch with placeholder footprints
+> and known circuit errors. It is not suitable for manufacture. The historical
+> dimensions and component descriptions below do not describe the new proposal.
+
 Custom PCB for the Devais handheld AI assistant, designed with [tscircuit](https://tscircuit.com/) (React/TypeScript).
 
 ## Board Specifications

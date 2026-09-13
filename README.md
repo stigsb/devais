@@ -47,7 +47,7 @@ devais/
 ## Getting Started
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.14
 - uv (Python package manager)
 - Prusa MK3S or compatible 3D printer
 

@@ -2,9 +2,9 @@
 name = "devais"
 version = "0.1.0"
 description = "Handheld AI Assistant Device - 3D CAD design and firmware"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.14,<3.15"
 dependencies = [
-    "cadquery>=2.4.0",
+    "cadquery>=2.8.0",
     "pillow>=10.0.0",
     "pyrender>=0.1.45",
     "trimesh>=4.11.2",

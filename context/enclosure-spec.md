@@ -1,3 +1,9 @@
+> Update 2026-09-11: The implementation now uses an offset diagonal split
+> (X−Y = −4), locating pins with blind sockets, screw closure, and chassis-only
+> component supports. Generated files are in root `output/`. See
+> `output/README.md` for dimensions, checks and unfinished hardware details.
+> Historical completion claims and X=0 joint descriptions below are superseded.
+
 # 1. Reference Image Analysis - DevAIs Enclosure
 
 ## 1.1. Overall Form ✅ REVIEWED

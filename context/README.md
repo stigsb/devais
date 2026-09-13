@@ -2,6 +2,10 @@
 
 ## Index
 
+Latest enclosure revision (2026-09-11): diagonal pin/socket joint and chassis mounts;
+see `output/README.md`. The two enclosure context files mark their older content
+as historical. Root `output/` is the current export destination.
+
 **When working on this project, read these files in `context/` for technical details:**
 
 **Additional Documentation:** The `docs/` folder contains supplementary documentation.

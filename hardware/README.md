@@ -1,5 +1,10 @@
 # Devais Hardware Design
 
+> The Python circuit-synth files below are historical circuit sketches.
+> See [the chassis PCB design](pcb/DESIGN.md) for the current proposal and
+> its validation limits. Neither these sketches nor the old tscircuit source
+> are a fabrication-ready board.
+
 Circuit definitions for Devais handheld AI assistant device using circuit-synth.
 
 ## Circuit Structure
