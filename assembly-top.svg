@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="1640" viewBox="0 0 600 1640">
+<defs>
+<style type="text/css">
+  .board { fill: #0f3460; stroke: #16213e; stroke-width: 2; }
+  .comp { fill: none; stroke-width: 1.2; }
+  .pad { fill: #c4a35a; opacity: 0.7; }
+  .hole { fill: #333333; stroke: #666666; stroke-width: 1.5; }
+  .leader { stroke: #666666; stroke-width: 0.6; stroke-dasharray: 2,2; }
+  .lbl { font-family: 'SF Mono','Menlo',monospace; font-size: 9px; }
+  .title { font-family: 'SF Mono','Menlo',monospace; font-size: 14px; font-weight: bold; fill: #fff; }
+  .legend { font-family: 'SF Mono','Menlo',monospace; font-size: 10px; fill: #fff; }
+</style>
+</defs>
+<rect width="600" height="1640" fill="#1a1a2e" />
+<text x="300" y="18" text-anchor="middle" class="title">Top Side Assembly — DevAIs PCB (36x140mm)</text>
+<rect x="120" y="120" width="360.0" height="1400.0" class="board" rx="3" ry="3" />
+<circle cx="200.0" cy="1410.0" r="11.0" class="hole" />
+<circle cx="400.0" cy="1410.0" r="11.0" class="hole" />
+<circle cx="200.0" cy="1190.0" r="11.0" class="hole" />
+<circle cx="400.0" cy="1190.0" r="11.0" class="hole" />
+<circle cx="200.0" cy="600.0" r="11.0" class="hole" />
+<circle cx="400.0" cy="600.0" r="11.0" class="hole" />
+<circle cx="200.0" cy="420.0" r="11.0" class="hole" />
+<circle cx="400.0" cy="420.0" r="11.0" class="hole" />
+<circle cx="200.0" cy="150.0" r="11.0" class="hole" />
+<circle cx="400.0" cy="150.0" r="11.0" class="hole" />
+<rect x="316.5" y="1238.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1250.7" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1263.3" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1276.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1276.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1263.3" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1250.7" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1238.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="268.5" y="1233.0" width="63.0" height="54.1" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="321.5" cy="1241.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="167.8" y="1315.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="184.2" y="1315.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="162.8" y="1310.2" width="34.5" height="19.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="171.8" cy="1320.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="367.8" y="1255.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="384.2" y="1255.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="362.8" y="1250.2" width="34.5" height="19.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="371.8" cy="1260.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="315.0" y="1090.0" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="315.0" y="1155.0" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="270.0" y="1155.0" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="270.0" y="1090.0" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="265.0" y="1085.0" width="70.0" height="90.0" class="comp" stroke="#f39c12" rx="2" />
+<circle cx="322.5" cy="1097.5" r="2" fill="#f39c12" opacity="0.8" />
+<rect x="375.2" y="1134.2" width="9.5" height="8.0" class="pad" rx="0.5" />
+<rect x="375.2" y="1117.8" width="9.5" height="8.0" class="pad" rx="0.5" />
+<rect x="370.2" y="1112.8" width="19.5" height="34.5" class="comp" stroke="#f39c12" rx="2" />
+<circle cx="380.0" cy="1138.2" r="2" fill="#f39c12" opacity="0.8" />
+<rect x="317.4" y="452.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="292.5" y="452.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="267.1" y="452.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="262.1" y="447.0" width="76.3" height="26.0" class="comp" stroke="#f39c12" rx="2" />
+<circle cx="325.4" cy="460.0" r="2" fill="#f39c12" opacity="0.8" />
+<rect x="375.2" y="464.2" width="9.5" height="8.0" class="pad" rx="0.5" />
+<rect x="375.2" y="447.8" width="9.5" height="8.0" class="pad" rx="0.5" />
+<rect x="370.2" y="442.8" width="19.5" height="34.5" class="comp" stroke="#f39c12" rx="2" />
+<circle cx="380.0" cy="468.2" r="2" fill="#f39c12" opacity="0.8" />
+<rect x="279.3" y="1462.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="305.2" y="1462.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="274.3" y="1457.0" width="50.9" height="26.0" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="287.3" cy="1470.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="365.8" y="1463.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="384.0" y="1463.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="360.8" y="1458.0" width="38.5" height="24.0" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="370.9" cy="1470.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="273.5" y="1308.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1320.7" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1333.3" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="273.5" y="1346.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1346.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1333.3" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1320.7" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="316.5" y="1308.0" width="10.0" height="6.0" class="pad" rx="0.5" />
+<rect x="268.5" y="1303.0" width="63.0" height="54.1" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="278.5" cy="1311.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="207.8" y="1355.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="224.2" y="1355.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="202.8" y="1350.2" width="34.5" height="19.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="211.8" cy="1360.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="365.8" y="1323.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="384.0" y="1323.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="360.8" y="1318.0" width="38.5" height="24.0" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="370.9" cy="1330.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="258.5" y="989.5" width="20.0" height="15.0" class="pad" rx="0.5" />
+<rect x="258.5" y="1012.5" width="20.0" height="15.0" class="pad" rx="0.5" />
+<rect x="258.5" y="1035.5" width="20.0" height="15.0" class="pad" rx="0.5" />
+<rect x="321.5" y="1001.0" width="20.0" height="38.0" class="pad" rx="0.5" />
+<rect x="253.5" y="984.5" width="93.0" height="71.0" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="268.5" cy="997.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="173.0" y="1024.0" width="14.0" height="10.2" class="pad" rx="0.5" />
+<rect x="173.0" y="1005.8" width="14.0" height="10.2" class="pad" rx="0.5" />
+<rect x="168.0" y="1000.8" width="24.0" height="38.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="180.0" cy="1029.1" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="413.0" y="1064.0" width="14.0" height="10.2" class="pad" rx="0.5" />
+<rect x="413.0" y="1045.8" width="14.0" height="10.2" class="pad" rx="0.5" />
+<rect x="408.0" y="1040.8" width="24.0" height="38.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="420.0" cy="1069.1" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="407.8" y="985.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="424.2" y="985.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="402.8" y="980.2" width="34.5" height="19.5" class="comp" stroke="#e74c3c" rx="2" />
+<circle cx="411.8" cy="990.0" r="2" fill="#e74c3c" opacity="0.8" />
+<rect x="192.0" y="962.8" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="192.5" y="937.9" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="192.5" y="912.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="192.5" y="887.1" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="192.5" y="861.7" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="187.0" y="856.7" width="26.0" height="127.1" class="comp" stroke="#2ecc71" rx="2" />
+<circle cx="200.0" cy="970.8" r="2" fill="#2ecc71" opacity="0.8" />
+<rect x="247.8" y="955.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="264.2" y="955.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="242.8" y="950.2" width="34.5" height="19.5" class="comp" stroke="#2ecc71" rx="2" />
+<circle cx="251.8" cy="960.0" r="2" fill="#2ecc71" opacity="0.8" />
+<rect x="361.0" y="731.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="361.0" y="736.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="361.0" y="741.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="361.0" y="746.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="371.2" y="750.2" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="376.2" y="750.2" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="381.2" y="750.2" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="386.2" y="750.2" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="390.2" y="746.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="390.2" y="741.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="390.2" y="736.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="390.2" y="731.2" width="8.8" height="2.5" class="pad" rx="0.5" />
+<rect x="386.2" y="721.0" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="381.2" y="721.0" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="376.2" y="721.0" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="371.2" y="721.0" width="2.5" height="8.8" class="pad" rx="0.5" />
+<rect x="356.0" y="716.0" width="48.0" height="48.0" class="comp" stroke="#95a5a6" rx="2" />
+<circle cx="365.4" cy="732.5" r="2" fill="#95a5a6" opacity="0.8" />
+<rect x="205.8" y="783.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="224.0" y="783.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="200.8" y="778.0" width="38.5" height="24.0" class="comp" stroke="#2ecc71" rx="2" />
+<circle cx="210.9" cy="790.0" r="2" fill="#2ecc71" opacity="0.8" />
+<rect x="417.8" y="735.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="434.2" y="735.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="412.8" y="730.2" width="34.5" height="19.5" class="comp" stroke="#2ecc71" rx="2" />
+<circle cx="421.8" cy="740.0" r="2" fill="#2ecc71" opacity="0.8" />
+<rect x="253.9" y="535.8" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="561.2" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="586.6" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="612.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="637.4" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="662.8" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="253.9" y="688.2" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="688.2" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="662.8" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="637.4" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="612.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="586.6" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="561.2" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="330.1" y="535.8" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="248.9" y="530.8" width="102.2" height="178.4" class="comp" stroke="#3498db" rx="2" />
+<circle cx="261.9" cy="543.8" r="2" fill="#3498db" opacity="0.8" />
+<rect x="187.8" y="665.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="204.2" y="665.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="182.8" y="660.2" width="34.5" height="19.5" class="comp" stroke="#3498db" rx="2" />
+<circle cx="191.8" cy="670.0" r="2" fill="#3498db" opacity="0.8" />
+<rect x="385.8" y="663.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="404.0" y="663.0" width="10.2" height="14.0" class="pad" rx="0.5" />
+<rect x="380.8" y="658.0" width="38.5" height="24.0" class="comp" stroke="#3498db" rx="2" />
+<circle cx="390.9" cy="670.0" r="2" fill="#3498db" opacity="0.8" />
+<rect x="419.3" y="692.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="445.2" y="692.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="414.3" y="687.0" width="50.9" height="26.0" class="comp" stroke="#2ecc71" rx="2" />
+<circle cx="427.3" cy="700.0" r="2" fill="#2ecc71" opacity="0.8" />
+<rect x="326.6" y="182.0" width="16.0" height="16.0" class="pad" rx="0.5" />
+<rect x="352.5" y="182.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="377.9" y="182.5" width="15.0" height="15.0" class="pad" rx="0.5" />
+<rect x="321.6" y="177.0" width="76.3" height="26.0" class="comp" stroke="#95a5a6" rx="2" />
+<circle cx="334.6" cy="190.0" r="2" fill="#95a5a6" opacity="0.8" />
+<rect x="231.8" y="257.5" width="13.2" height="6.0" class="pad" rx="0.5" />
+<rect x="231.8" y="276.5" width="13.2" height="6.0" class="pad" rx="0.5" />
+<rect x="254.9" y="267.0" width="13.2" height="6.0" class="pad" rx="0.5" />
+<rect x="226.8" y="252.5" width="46.2" height="35.0" class="comp" stroke="#95a5a6" rx="2" />
+<circle cx="238.4" cy="260.5" r="2" fill="#95a5a6" opacity="0.8" />
+<rect x="237.8" y="235.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="254.2" y="235.2" width="8.0" height="9.5" class="pad" rx="0.5" />
+<rect x="232.8" y="230.2" width="34.5" height="19.5" class="comp" stroke="#95a5a6" rx="2" />
+<circle cx="241.8" cy="240.0" r="2" fill="#95a5a6" opacity="0.8" />
+<line x1="250.0" y1="240.0" x2="112.0" y2="135.0" class="leader" />
+<text x="112.0" y="138.0" text-anchor="end" class="lbl" fill="#95a5a6">R_GATE 10k</text>
+<line x1="250.0" y1="270.0" x2="112.0" y2="149.0" class="leader" />
+<text x="112.0" y="152.0" text-anchor="end" class="lbl" fill="#95a5a6">Q1</text>
+<line x1="300.0" y1="620.0" x2="112.0" y2="163.0" class="leader" />
+<text x="112.0" y="166.0" text-anchor="end" class="lbl" fill="#3498db">U_MCU</text>
+<line x1="200.0" y1="670.0" x2="112.0" y2="177.0" class="leader" />
+<text x="112.0" y="180.0" text-anchor="end" class="lbl" fill="#3498db">C_MCU1 100nF</text>
+<line x1="220.0" y1="790.0" x2="112.0" y2="191.0" class="leader" />
+<text x="112.0" y="194.0" text-anchor="end" class="lbl" fill="#2ecc71">C_AMP1 10uF</text>
+<line x1="200.0" y1="920.2" x2="112.0" y2="205.0" class="leader" />
+<text x="112.0" y="208.0" text-anchor="end" class="lbl" fill="#2ecc71">J_MIC</text>
+<line x1="260.0" y1="960.0" x2="112.0" y2="219.0" class="leader" />
+<text x="112.0" y="222.0" text-anchor="end" class="lbl" fill="#2ecc71">C_MIC 100nF</text>
+<line x1="300.0" y1="1020.0" x2="112.0" y2="233.0" class="leader" />
+<text x="112.0" y="236.0" text-anchor="end" class="lbl" fill="#e74c3c">U_REG</text>
+<line x1="180.0" y1="1020.0" x2="112.0" y2="247.0" class="leader" />
+<text x="112.0" y="250.0" text-anchor="end" class="lbl" fill="#e74c3c">C_REGIN 10uF</text>
+<line x1="300.0" y1="1130.0" x2="112.0" y2="261.0" class="leader" />
+<text x="112.0" y="264.0" text-anchor="end" class="lbl" fill="#f39c12">SW_PWR</text>
+<line x1="300.0" y1="1260.0" x2="112.0" y2="275.0" class="leader" />
+<text x="112.0" y="278.0" text-anchor="end" class="lbl" fill="#e74c3c">J_USB</text>
+<line x1="180.0" y1="1320.0" x2="112.0" y2="289.0" class="leader" />
+<text x="112.0" y="292.0" text-anchor="end" class="lbl" fill="#e74c3c">R_CC1 5k</text>
+<line x1="300.0" y1="1330.0" x2="112.0" y2="303.0" class="leader" />
+<text x="112.0" y="306.0" text-anchor="end" class="lbl" fill="#e74c3c">U_CHG</text>
+<line x1="220.0" y1="1360.0" x2="112.0" y2="317.0" class="leader" />
+<text x="112.0" y="320.0" text-anchor="end" class="lbl" fill="#e74c3c">R_PROG 1k</text>
+<line x1="299.8" y1="1470.0" x2="112.0" y2="331.0" class="leader" />
+<text x="112.0" y="334.0" text-anchor="end" class="lbl" fill="#e74c3c">J_BAT</text>
+<line x1="359.8" y1="190.0" x2="488.0" y2="135.0" class="leader" />
+<text x="488.0" y="138.0" text-anchor="start" class="lbl" fill="#95a5a6">J_LED</text>
+<line x1="300.2" y1="460.0" x2="488.0" y2="149.0" class="leader" />
+<text x="488.0" y="152.0" text-anchor="start" class="lbl" fill="#f39c12">SW_PTT</text>
+<line x1="380.0" y1="460.0" x2="488.0" y2="163.0" class="leader" />
+<text x="488.0" y="166.0" text-anchor="start" class="lbl" fill="#f39c12">R_PTT 10k</text>
+<line x1="400.0" y1="670.0" x2="488.0" y2="177.0" class="leader" />
+<text x="488.0" y="180.0" text-anchor="start" class="lbl" fill="#3498db">C_MCU2 10uF</text>
+<line x1="439.8" y1="700.0" x2="488.0" y2="191.0" class="leader" />
+<text x="488.0" y="194.0" text-anchor="start" class="lbl" fill="#2ecc71">J_SPK</text>
+<line x1="380.0" y1="740.0" x2="488.0" y2="205.0" class="leader" />
+<text x="488.0" y="208.0" text-anchor="start" class="lbl" fill="#95a5a6">U_AMP</text>
+<line x1="430.0" y1="740.0" x2="488.0" y2="219.0" class="leader" />
+<text x="488.0" y="222.0" text-anchor="start" class="lbl" fill="#2ecc71">C_AMP2 100nF</text>
+<line x1="420.0" y1="990.0" x2="488.0" y2="233.0" class="leader" />
+<text x="488.0" y="236.0" text-anchor="start" class="lbl" fill="#e74c3c">C_REGDEC 100nF</text>
+<line x1="420.0" y1="1060.0" x2="488.0" y2="247.0" class="leader" />
+<text x="488.0" y="250.0" text-anchor="start" class="lbl" fill="#e74c3c">C_REGOUT 22uF</text>
+<line x1="380.0" y1="1130.0" x2="488.0" y2="261.0" class="leader" />
+<text x="488.0" y="264.0" text-anchor="start" class="lbl" fill="#f39c12">R_PWR 10k</text>
+<line x1="380.0" y1="1260.0" x2="488.0" y2="275.0" class="leader" />
+<text x="488.0" y="278.0" text-anchor="start" class="lbl" fill="#e74c3c">R_CC2 5k</text>
+<line x1="380.0" y1="1330.0" x2="488.0" y2="289.0" class="leader" />
+<text x="488.0" y="292.0" text-anchor="start" class="lbl" fill="#e74c3c">C_USB 10uF</text>
+<line x1="380.0" y1="1470.0" x2="488.0" y2="303.0" class="leader" />
+<text x="488.0" y="306.0" text-anchor="start" class="lbl" fill="#e74c3c">C_BAT 10uF</text>
+<text x="10" y="1585" class="legend" font-weight="bold">Subsystems:</text>
+<rect x="10" y="1590" width="9" height="9" fill="#e74c3c" rx="1" />
+<text x="23" y="1599" class="legend">POWER</text>
+<rect x="10" y="1604" width="9" height="9" fill="#3498db" rx="1" />
+<text x="23" y="1613" class="legend">MCU</text>
+<rect x="10" y="1618" width="9" height="9" fill="#2ecc71" rx="1" />
+<text x="23" y="1627" class="legend">AUDIO</text>
+<rect x="10" y="1632" width="9" height="9" fill="#f39c12" rx="1" />
+<text x="23" y="1641" class="legend">UI</text>
+</svg>
