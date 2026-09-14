@@ -23,6 +23,10 @@ USB_SIZE = (7.35, 8.94, 3.31)  # GCT USB4105 drawing rev B4, gct.co/files/drawin
 SWITCH_SIZE = (3.4, 6.4, 6.4)  # Omron B3F-1000 body, includes +/-0.2 width tolerance.
 SWITCH_THROW = 0.25  # A070-E1.pdf; tune actuator gap with printed shims.
 ACTUATOR_GAP = 0.10
+PTT_CROWN_X = 22.85  # Outer face of the TPU flange; the crown grows from here.
+PTT_CROWN_BASE = (27.0, 47.0, 9.0)  # Y width, Z height, corner radius
+PTT_CROWN_BEVEL = 2.0  # 45 deg, so the top face is 2*BEVEL smaller each way
+PTT_DOT = (1.0, 0.5, 1.5)  # diameter, height, pitch
 SPEAKER_Z = e.DEVICE_HEIGHT - e.SPEAKER_TOP_OFFSET - e.SPEAKER_DIAMETER / 2
 LED_SOCKET_X = e.LED_BOARD_X - 2.2  # SH socket behind the LED board, offset towards X+
 WALL_INNER_Y = -(e.DEVICE_WIDTH/2 - e.WALL_THICKNESS)  # inside face of the front wall
@@ -37,6 +41,27 @@ def box(size, center):
 
 def cylinder(radius, length, origin, axis):
     return cq.Solid.makeCylinder(radius, length, cq.Vector(*origin), cq.Vector(*axis))
+
+
+def rounded_rect(plane_origin, width, height, radius):
+    """Rounded rectangle sketch on a YZ workplane; width spans Y, height spans Z."""
+    return (cq.Workplane('YZ', origin=plane_origin).sketch()
+            .rect(width, height, tag='r').vertices(tag='r').fillet(radius).finalize())
+
+
+def dot_grid(width, height, radius, dia, pitch):
+    """Dot centers on a rounded rect, every dot fully inside the outline."""
+    hw, hh = width/2 - dia/2, height/2 - dia/2
+    dx, dy = width/2 - radius, height/2 - radius
+    pts = []
+    for i in range(-int(hw/pitch), int(hw/pitch)+1):
+        for j in range(-int(hh/pitch), int(hh/pitch)+1):
+            u, v = i*pitch, j*pitch
+            if abs(u) > dx and abs(v) > dy and math.hypot(
+                    u-math.copysign(dx, u), v-math.copysign(dy, v)) > radius - dia/2:
+                continue
+            pts.append((u, v))
+    return pts
 
 
 def rounded_path(points, radius):
@@ -199,7 +224,15 @@ def build():
             seal=(cq.Workplane('YZ',origin=(21.6,0,z)).rect(29,49).extrude(.05).edges('|X').fillet(10).val())
             seal=seal.cut(cq.Workplane('YZ',origin=(21.5,0,z)).rect(26,46).extrude(.3).edges('|X').fillet(8.5).val())
             add(label+'_perimeter_tape',seal,'#ddd1ac')
-            cap=cap.fuse(flange).fuse(cylinder(1.4,20.3-17.5-ACTUATOR_GAP,(17.5+ACTUATOR_GAP,0,z),(1,0,0)))
+            # Chamfered, dot-textured crown: thumb finds the PTT face without looking.
+            crown=rounded_rect((PTT_CROWN_X-.2,0,z),*PTT_CROWN_BASE).extrude(
+                PTT_CROWN_BEVEL+.2,taper=45).val()
+            top_w,top_h=(d-2*PTT_CROWN_BEVEL for d in PTT_CROWN_BASE[:2])
+            dots=dot_grid(top_w,top_h,PTT_CROWN_BASE[2]-PTT_CROWN_BEVEL,PTT_DOT[0],PTT_DOT[2])
+            bumps=(cq.Workplane('YZ',origin=(PTT_CROWN_X+PTT_CROWN_BEVEL,0,z))
+                   .pushPoints(dots).circle(PTT_DOT[0]/2).extrude(PTT_DOT[1]).val())
+            cap=cap.fuse(flange).fuse(crown).fuse(bumps).fuse(
+                cylinder(1.4,20.3-17.5-ACTUATOR_GAP,(17.5+ACTUATOR_GAP,0,z),(1,0,0)))
         else:
             seal=cylinder(5.5,.65,(21,0,z),(1,0,0)).cut(cylinder(4.25,.8,(20.9,0,z),(1,0,0)))
             add(label+'_perimeter_tape',seal,'#ddd1ac')
