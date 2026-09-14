@@ -34,6 +34,16 @@ historical; `context/enclosure-work.md` was rewritten to the current state. Root
 - Outstanding work
 - CadQuery techniques the model depends on, and the decisions behind them
 
+### `context/software-decisions.md`
+**Read when:** Implementing firmware, the phone companion, or the BLE
+transport, or checking which prototype microphone option is in use.
+
+**Contains:**
+- Firmware framework and host platform decisions
+- The staged BLE transport and codec plan, with the options rejected and why
+- The throughput and link-budget constraints and estimates behind that plan
+- The prototype microphone decision
+
 ## Index Updates
 
 This file must be updated when `context/*.md` files are added, modified or deleted.
