@@ -1,9 +1,11 @@
 # Devais Hardware Design
 
 > The Python circuit-synth files below are historical circuit sketches.
-> See [the chassis PCB design](pcb/DESIGN.md) for the current proposal and
-> its validation limits. Neither these sketches nor the old tscircuit source
-> are a fabrication-ready board.
+> See [the electrical design](pcb/DESIGN.md) (revision 2, 2026-09-13) for the
+> current circuit and [the parts list](BOM.md) for every part, lead and tool.
+> [PROTOTYPE.md](PROTOTYPE.md) covers the stripboard bench build and the field
+> unit on the XIAO nRF52840 Sense that precede the custom PCB.
+> Neither these sketches nor the old tscircuit source are a fabrication-ready board.
 
 Circuit definitions for Devais handheld AI assistant device using circuit-synth.
 

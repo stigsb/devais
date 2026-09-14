@@ -1,8 +1,9 @@
 # Devais Main PCB
 
-> **Current design proposal (2026-09-13):** see [DESIGN.md](DESIGN.md) for the
+> **Current design (2026-09-13, revision 2):** see [DESIGN.md](DESIGN.md) for the
 > 26 × 126 mm chassis-mounted board, castellated radio module, and JST-connected
-> peripherals. `design.py` checks its mechanical allocations. The electrical
+> peripherals, and [../BOM.md](../BOM.md) for the parts list. `design.py` checks
+> the mechanical allocations. The electrical
 > source below remains an older, incompatible sketch with placeholder footprints
 > and known circuit errors. It is not suitable for manufacture. The historical
 > dimensions and component descriptions below do not describe the new proposal.

@@ -19,7 +19,7 @@ HALF_LONG_SIDE = LONG_SIDE_LENGTH / 2.0
 CORNER_COORD = DEVICE_WIDTH / 2.0
 
 # Components
-LED_DIAMETER = 3.0  # 3mm holes for WS2812B-2020 (2mm) with light diffusion margin
+LED_DIAMETER = 3.2  # Through-hole 3 mm LED domes pass the wall; 0.2 mm clearance
 LED_POSITIONS_X = [0.0, 6.0]  # Two RGB LEDs; X=6 keeps the hole clear of the front-face chamfer
 LED_BOARD_X = sum(LED_POSITIONS_X) / len(LED_POSITIONS_X)  # Daughterboard centred on the emitters
 LED_TOP_OFFSET = 10.0
@@ -85,14 +85,36 @@ BATTERY_CRADLE_THICKNESS = 1.8
 BATTERY_CRADLE_RIB_WIDTH = 4.0
 BATTERY_CRADLE_RIB_Z = (25.0, 69.0)
 BATTERY_STRAP_WIDTH = 3.5
-# Contact carriers intentionally accept adhesive copper/nickel contact strips;
-# no unsupported claim of compatibility with a particular purchased holder.
+# Contact carriers include a lead slot and, on the positive end, a plate
+# pocket; no rivet hole or boss for a particular purchased contact. Sized for the Keystone 5201/5223 plates.
 CONTACT_PLATE_THICKNESS = 2.0
-CONTACT_SPACE = 3.0  # Space beyond each cell end for contact/spring + insulation.
+CONTACT_SPACE = 3.5  # Keystone 5201 spring + 5223 button: 72.0 mm inside for a 65.0 cell
+# Reverse-insertion collar on the positive carrier: a ring around the 5223 plate
+# whose underside sits POSITIVE_COLLAR_DROP below the button tip. A reversed cell's
+# flat end stops on the ring; the correct cell's raised cap passes through the
+# opening. Requires cap protrusion > POSITIVE_COLLAR_DROP (measure the 35E cap and
+# the 5223 button before printing; tune POSITIVE_COLLAR_DROP).
+POSITIVE_COLLAR_ID = 12.0  # clears the Ø8 cell cap and the Ø11 insulating washer
+POSITIVE_COLLAR_DROP = 0.4
+POSITIVE_COLLAR_HEIGHT = 0.5 + 1.0 + POSITIVE_COLLAR_DROP  # plate + button + drop, from the carrier face
+POSITIVE_PLATE_POCKET = (11.6, 0.6)  # X width and depth of the 5223 plate pocket in the collar top
 
 # Custom daughterboard seats; these are mechanical design constraints.
 MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT = 15.0, 8.0
-LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 10.0, 8.0
+
+# Field-unit variant (hardware/PROTOTYPE.md): stripboard carrier, XIAO nRF52840
+# Sense, Adafruit 3492 PDM microphone breakout. Product geometry is unchanged.
+FIELD_MIC_BOARD = (14.0, 12.8)  # Adafruit 3492 outline; the product board is 15 x 8
+FIELD_TOP_USBC = (7.05, 0.0, 7.5, 13.0, 2.0)  # centre X, centre Y, X size, Y size, corner radius
+FIELD_BOARD_WIDTH, FIELD_BOARD_HEIGHT = 25.4, 135.0  # 1 in stripboard, Z 12..147
+FIELD_BOARD_WINDOWS = ((136.3, 12.0), (119.5, 13.0))  # (centre Z, Z size), 8 mm wide at Y = 0
+
+
+def mic_board_size(variant='product'):
+    return FIELD_MIC_BOARD if variant == 'field' else (MIC_BOARD_WIDTH, MIC_BOARD_HEIGHT)
+
+
+LED_BOARD_WIDTH, LED_BOARD_HEIGHT = 12.0, 8.0  # Two 3 mm RGB LEDs and a 7-way SH header
 AUDIO_BOARD_THICKNESS = 1.6
 SPEAKER_BODY_DIAMETER = 20.0
 SPEAKER_BODY_DEPTH = 5.3  # Same Sky CMS-2053-18SP; the 4.0 mm CMS-2004 also fits
@@ -134,7 +156,7 @@ def create_octagonal_prism(height, width, half_long_side, fillet_radius=0.0):
 def add_led_holes(enclosure):
     """
     Front side (Y+), 10mm from top.
-    2x 3mm holes for WS2812B-2020 RGB LEDs at explicit X positions.
+    2x 3.2 mm holes for 3 mm RGB LEDs at explicit X positions.
     """
     z_pos = DEVICE_HEIGHT - LED_TOP_OFFSET
 
@@ -281,6 +303,20 @@ def add_usbc_port(enclosure):
 
     enclosure = enclosure.cut(tool)
     return enclosure
+
+def add_top_usbc_port(enclosure):
+    """Field unit: the XIAO USB-C exits through the top end wall, chassis side of the seam."""
+    cx, cy, sx, sy, r = FIELD_TOP_USBC
+    tool = (
+        cq.Workplane("XY")
+        .workplane(offset=DEVICE_HEIGHT + CUT_OVERSHOOT)
+        .center(cx, cy)
+        .rect(sx, sy)
+        .extrude(-(WALL_THICKNESS + 2 * CUT_OVERSHOOT))
+        .edges("|Z")
+        .fillet(r)
+    )
+    return enclosure.cut(tool)
 
 def add_large_button_feature(enclosure):
     """
@@ -434,12 +470,32 @@ def board_envelope():
         (PCB_FACE_X-PCB_THICKNESS/2, 0, PCB_Y_OFFSET))
 
 
+def field_stripboard_envelope():
+    z = PCB_Y_OFFSET - PCB_HEIGHT/2 + FIELD_BOARD_HEIGHT/2
+    board = cq.Workplane('XY').box(PCB_THICKNESS, FIELD_BOARD_WIDTH, FIELD_BOARD_HEIGHT).translate(
+        (PCB_FACE_X - PCB_THICKNESS/2, 0, z))
+    # The seam pin pad at (18.8, 144.5) reaches Y 9.43 at Z 140.9..147; the XIAO's Y+
+    # castellation row at Y 8.89 keeps the board under it, so notch the Y+ top corner.
+    return board.cut(cq.Workplane('XY').box(5, 5, 10).translate(
+        (PCB_FACE_X - PCB_THICKNESS/2, 11.5, 145)))
+
+
+def field_stripboard_template():
+    """Stripboard drilling template: the ten PCB holes plus two lead windows."""
+    board = field_stripboard_envelope()
+    for y, z in PCB_MOUNTING_HOLES:
+        board = board.cut(cq.Workplane('YZ', origin=(PCB_FACE_X+1, y, z+PCB_Y_OFFSET)).circle(1.1).extrude(-5))
+    for zc, zs in FIELD_BOARD_WINDOWS:
+        board = board.cut(cq.Workplane('XY').box(PCB_THICKNESS+1, 8, zs).translate((PCB_FACE_X - PCB_THICKNESS/2, 0, zc)))
+    return board
+
+
 def battery_envelope():
     return cq.Workplane('XY').center(BATTERY_CENTER_X, 0).circle(
         BATTERY_DIAMETER/2).extrude(BATTERY_LENGTH).translate((0, 0, BATTERY_BOTTOM_Z))
 
 
-def add_component_mounts(chassis):
+def add_component_mounts(chassis, variant='product'):
     # Continuous rails carry bosses in the button opening back to intact wall.
     rail_bottom, rail_top = 13.0, 137.0
     for y in (-10, 10):
@@ -475,20 +531,35 @@ def add_component_mounts(chassis):
               BATTERY_BOTTOM_Z+BATTERY_LENGTH+CONTACT_SPACE):
         carrier = cq.Workplane('XY').box(14,22,CONTACT_PLATE_THICKNESS).translate(
             (BATTERY_CENTER_X,-8,z+CONTACT_PLATE_THICKNESS/2))
-        # Contact strip/wire passes through the carrier; add insulating liner.
+        # Slot for a contact strip or lead through the carrier; add insulating liner.
+        # The modeled BAT leads route outside the carrier instead.
         slot = cq.Workplane('XY').box(5,1.5,6).translate((BATTERY_CENTER_X,0,z+1))
         chassis = chassis.union(carrier.cut(slot))
+    top = BATTERY_BOTTOM_Z+BATTERY_LENGTH+CONTACT_SPACE
+    collar = (cq.Workplane('XY').center(BATTERY_CENTER_X, 0)
+              .circle(BATTERY_DIAMETER/2+BATTERY_CLEARANCE).circle(POSITIVE_COLLAR_ID/2)
+              .extrude(POSITIVE_COLLAR_HEIGHT).translate((0, 0, top-POSITIVE_COLLAR_HEIGHT)))
+    # Only the part under the carrier footprint has something to hang from.
+    collar = collar.intersect(cq.Workplane('XY').box(14,22,POSITIVE_COLLAR_HEIGHT).translate(
+        (BATTERY_CENTER_X,-8,top-POSITIVE_COLLAR_HEIGHT/2)))
+    # Pocket for the 11.2 x 12.0 plate, open toward +Y for the solder tab.
+    pw, pd = POSITIVE_PLATE_POCKET
+    pocket = cq.Workplane('XY').box(pw,30,pd).translate((BATTERY_CENTER_X,-6.2+15,top-pd/2))
+    chassis = chassis.union(collar.cut(pocket))
 
     # Recessed seats locate custom mic/LED boards. Removable adhesive on the
     # perimeter retains them without blocking the acoustic/light windows.
-    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
+    mic_w, mic_h = mic_board_size(variant)
+    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,mic_w,mic_h),
                     (LED_BOARD_X,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
         seat = cq.Workplane('XY').box(w+4,3.5,h+4).translate((x,-17.5,z))
         pocket = cq.Workplane('XY').box(w+MOUNT_CLEARANCE,4,h+MOUNT_CLEARANCE).translate((x,-15.0,z))
         # Preserve the acoustic/light path through the center of the seat.
         window = cq.Workplane('XY').box(w-2,8,h-2).translate((x,-18,z))
         seat = seat.cut(pocket).cut(window)
-        chassis = chassis.union(seat)
+        # The pocket is also cut from the chassis: the 12.8 mm field mic board
+        # overlaps the negative cell carrier. No-op for the product boards.
+        chassis = chassis.cut(pocket).union(seat)
 
     # Speaker cup: front gasket seat, rear insertion, cable-tie retention.
     z = DEVICE_HEIGHT-SPEAKER_TOP_OFFSET-SPEAKER_DIAMETER/2
@@ -505,7 +576,7 @@ def add_component_mounts(chassis):
     return chassis
 
 
-def split_enclosure(enclosure):
+def split_enclosure(enclosure, variant='product'):
     """Offset diagonal joint with two round pins, blind sockets and M2 closure."""
     positive = cq.Workplane(seam_plane()).center(0,75).rect(200,300).extrude(100)
     negative = cq.Workplane(seam_plane(-JOINT_GAP)).center(0,75).rect(200,300).extrude(-100)
@@ -527,7 +598,7 @@ def split_enclosure(enclosure):
         cover = cover.cut(seam_cylinder(u,z,SCREW_CLEARANCE/2,0.1,-50))
         cover = cover.cut(seam_cylinder(u,z,SCREW_HEAD_CLEARANCE/2,-2.5,-50))
     # Clip internal mounts to the exterior while preserving the raised controls.
-    chassis = chassis.union(add_component_mounts(chassis).intersect(envelope))
+    chassis = chassis.union(add_component_mounts(chassis, variant).intersect(envelope))
     # Trim only the frame corner that would extend below the diagonal bed face.
     bed_depth = (CORNER_COORD+HALF_LONG_SIDE-SPLIT_OFFSET)/math.sqrt(2)
     bed_limit = cq.Workplane(seam_plane(bed_depth)).center(0,75).rect(200,300).extrude(-100)
@@ -542,24 +613,26 @@ def print_orientation(part, cover=False):
     return part.translate((-box.center.x,-box.center.y,-box.zmin))
 
 
-def check_assembly(chassis, cover):
+def check_assembly(chassis, cover, variant='product'):
     for name, part in [('chassis',chassis),('cover',cover)]:
         assert part.val().isValid(), f'{name}: invalid BREP'
         assert part.solids().size() == 1, f'{name}: disconnected mounting features'
     assert chassis.intersect(cover).val().Volume() < 1e-5, 'shells collide'
-    for name, envelope in [('PCB',board_envelope()),('battery',battery_envelope())]:
+    board = field_stripboard_envelope() if variant == 'field' else board_envelope()
+    for name, envelope in [('PCB',board),('battery',battery_envelope())]:
         for part in (chassis,cover):
             assert part.intersect(envelope).val().Volume() < 1e-5, f'{name} collides with shell/mounts'
     speaker_z = DEVICE_HEIGHT-SPEAKER_TOP_OFFSET-SPEAKER_DIAMETER/2
     speaker = cq.Workplane('XZ',origin=(0,-18.3,speaker_z)).circle(
         SPEAKER_BODY_DIAMETER/2).extrude(-SPEAKER_BODY_DEPTH)
     components = [('speaker', speaker)]
-    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,MIC_BOARD_WIDTH,MIC_BOARD_HEIGHT),
+    mic_w, mic_h = mic_board_size(variant)
+    for x,z,w,h in ((MIC_X_OFFSET,MIC_BOTTOM_OFFSET,mic_w,mic_h),
                     (LED_BOARD_X,DEVICE_HEIGHT-LED_TOP_OFFSET,LED_BOARD_WIDTH,LED_BOARD_HEIGHT)):
         components.append(('daughterboard',cq.Workplane('XY').box(w,AUDIO_BOARD_THICKNESS,h).translate(
             (x,-17+AUDIO_BOARD_THICKNESS/2,z))))
     for name, component in components:
-        for solid in (chassis,cover,board_envelope(),battery_envelope()):
+        for solid in (chassis,cover,board,battery_envelope()):
             assert solid.intersect(component).val().Volume() < 1e-5, f'{name} interference'
     for u,z in PIN_POSITIONS:
         shaft = seam_cylinder(u,z,PIN_DIAMETER/2,-0.4,-2.0)
@@ -575,7 +648,7 @@ def check_assembly(chassis, cover):
 
 # --- Main Build ---
 
-def build_enclosure():
+def build_enclosure(variant='product'):
     # 1. Create outer solid octagonal prism
     solid = create_octagonal_prism(DEVICE_HEIGHT, DEVICE_WIDTH, HALF_LONG_SIDE, FILLET_RADIUS)
     
@@ -617,7 +690,10 @@ def build_enclosure():
     enclosure = add_mic_hole_and_mount(enclosure)
     enclosure = add_speaker_grille(enclosure)
     enclosure = add_power_button(enclosure)
-    enclosure = add_usbc_port(enclosure)
+    if variant == 'field':
+        enclosure = add_top_usbc_port(enclosure)
+    else:
+        enclosure = add_usbc_port(enclosure)
     enclosure = add_large_button_feature(enclosure)
 
     return enclosure
@@ -647,17 +723,25 @@ def export_stl(part, path):
     mesh.export(path)
 
 
-def main():
-    output_dir = Path('output')
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--variant', choices=('product', 'field'), default='product')
+    variant = parser.parse_args(argv).variant
+    output_dir = Path('output') if variant == 'product' else Path('output/field-unit')
     output_dir.mkdir(parents=True, exist_ok=True)
-    chassis, cover = split_enclosure(build_enclosure())
-    check_assembly(chassis, cover)
+    chassis, cover = split_enclosure(build_enclosure(variant), variant)
+    check_assembly(chassis, cover, variant)
     for name, part in [('chassis',chassis),('cover',cover)]:
         for suffix, shape in [('assembled',part),('print',print_orientation(part,name=='cover'))]:
             path = output_dir / f'{name}_{suffix}'
             export_stl(shape, path.with_suffix('.stl'))
             cq.exporters.export(shape, str(path.with_suffix('.step')))
             print(f'Exported {path}: one valid solid', flush=True)
+    if variant == 'field':
+        cq.exporters.export(field_stripboard_template(), str(output_dir/'stripboard_template.step'))
+        print('Field-unit enclosure checks passed', flush=True)
+        return
     for name, part in zip(('fit_pins','fit_sockets'), fit_coupon()):
         export_stl(part, output_dir/f'{name}.stl')
     template = board_envelope()

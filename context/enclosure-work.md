@@ -7,6 +7,10 @@ are millimetres.
 the list of unfinished hardware. Read it first. This file covers the enclosure
 parameters and the CadQuery approach behind them.
 
+Field-unit variant (`--variant field`) models the XIAO/stripboard prototype in
+the product chassis; product outputs unchanged. Plan:
+`docs/superpowers/plans/2026-09-14-field-unit-variant.md`.
+
 ## Shape
 
 An octagonal prism, 40 flat-to-flat and 150 tall, made by chamfering a 40 mm
@@ -32,7 +36,7 @@ Positions are given from the end they are measured from, as in the source.
 
 | Feature | Face | Size | Position |
 |---|---|---|---|
-| LED holes (2) | Front | 3 diameter | X = 0 and 6, 10 from top |
+| LED holes (2) | Front | 3.2 diameter | X = 0 and 6, 10 from top |
 | Speaker grille | Front | 19.9 diameter, perforated | Upper edge 20 from top |
 | Microphone | Front | 1.5 acoustic hole, 1.0 inner port | 10 from bottom, X + 1 |
 | Microphone pocket | Front, inside | 4.92 x 3.96, 1.0 deep | Behind the acoustic hole |
@@ -50,13 +54,16 @@ corner radii running 8 at the base to 5.4 at the top, and a dotted grip texture.
 
 - Main board envelope 26 x 126 x 1.6, resting on continuous rails, with bosses at
   the button opening.
-- Cell envelope 18.6 x 65 at X = -3, Z = 20 to 85, held by two front-wall saddles
-  with strap slots. The cover does not retain the cell.
+- Cell envelope 18.6 x 65 at X = -3, Z = 20 to 85, contacts Keystone 5201/5223,
+  carriers 3.5 mm beyond each end, held by two front-wall saddles with strap
+  slots. The cover does not retain the cell. A 1.9 mm collar around the positive
+  plate stops a reversed cell 0.4 mm short of the button, provided the cell cap
+  protrudes more than 0.4 mm.
 - Speaker envelope 20 diameter x 5.3 deep, in a locating cup with tie lugs.
-- Daughterboard seats: microphone 15 x 8 x 1.6, LEDs 10 x 8 x 1.6.
+- Daughterboard seats: microphone 15 x 8 x 1.6, LEDs 12 x 8 x 1.6.
 
-These are mechanical envelopes, not validated commercial parts. Contacts,
-springs, insulation and the acoustic gasket are still unspecified.
+These are mechanical envelopes, not validated commercial parts. Contact preload
+and the acoustic gasket are still unspecified.
 
 ## Generating and checking
 
@@ -84,7 +91,7 @@ Print the fit coupon before the shells. It carries three socket clearances of
   to the chosen switch.
 - USB connector reach and populated board component heights are unverified.
 - Print tolerances and support removal have not been tested on a printer.
-- A higher-fidelity LED display is deferred to V2. The two 3 mm openings stay as
+- A higher-fidelity LED display is deferred to V2. The two 3.2 mm openings stay as
   they are. See `docs/led-indicator-research-2026-09-13.md`.
 
 ## CadQuery notes

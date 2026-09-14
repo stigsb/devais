@@ -7,7 +7,7 @@ On macOS, follow the sandbox note in `AGENTS.md` if Python encounters UI errors.
 
 This is a dimensioned assembly prototype. It includes the proposed main PCB,
 radio and circuit-group allocations, daughterboards, mated connector envelopes,
-21 insulated conductors, cell, contacts, thermistor, speaker, switches, caps,
+29 insulated conductors, cell, contacts, thermistor, speaker, switches, caps,
 gaskets, adhesive layers, straps and screws. It does not turn the unfinished
 circuit into a routed or manufacturable PCB.
 
@@ -43,22 +43,47 @@ the report; do not interpret those files as a successful new build.
 | Part | Mount and mechanical constraint |
 |---|---|
 | Main PCB | Existing 26 × 126 × 1.6 mm slab and ten holes; six M2 × 5 screws. |
-| Battery | Existing Ø18.6 × 65 mm cell position; two straps in new saddle grooves. Contact cylinders and insulating washers reserve the end space. |
+| Battery | Existing Ø18.6 × 65 mm cell position; two straps in new saddle grooves. Keystone 5201 spring and 5223 button contacts on the end carriers, 72.0 mm inside; a 1.9 mm collar around the positive plate stops a reversed cell 0.4 mm short of the button, provided the cell cap protrudes more than 0.4 mm (measure before printing). The sprung cell can sit up to 2.0 mm above the modelled envelope. |
 | Speaker | Ø20 × 5.3 mm envelope (CMS-2053-18SP) and perimeter gasket; removable stepped bridge with two M2 × 5 screws driven along Z. The bridge clears the PCB edge. |
 | Microphone | Custom **15 × 8 × 1.6 mm** board; IM69D130 aligned with X = 1, Z = 10 sound hole. The sideways SH connector sits beside the mic; perimeter tape seals and retains the board. |
-| LEDs | Custom **10 × 8 × 1.6 mm** board; emitters at X = 0 and 6, Z = 140. SH socket on the inward face; perimeter tape retains the board. |
-| USB-C | GCT USB4105 envelope facing X+, with a custom **6.6 × 13 × 1 mm** horizontal board. Bond the board into the locating shoe and the shoe tabs to the chassis. Its rear stop carries insertion load. |
+| LEDs | Custom **12 × 8 × 1.6 mm** board with two 3 mm RGB LEDs and a 7-way SH header; emitters at the LED_POSITIONS_X values, Z = 140. SH socket on the inward face; perimeter tape retains the board. |
+| USB-C | GCT USB4105 envelope facing X+, with a custom **13 × 6.6 × 1 mm** horizontal board with an 8-way SH header on its underside. Bond the board into the locating shoe and the shoe tabs to the chassis. Its rear stop carries insertion load. |
 | PTT and power | Omron B3F-1000 envelopes in separate carriers bonded to the chassis rails. Trim and insulate terminals within the modeled envelope. Thin adhesive strips retain the switch. |
 | Button caps | TPU diaphragm perimeter bonded to the outer frame/ring. The switch supplies return force; a carrier shoulder limits the center to 0.35 mm travel, including 0.10 mm free play. |
 | Wiring | Individual swept insulation solids with rounded bends; passages through rails retain button/USB leads. The battery-negative lead lies in a ribbed channel on the inside of the front wall, notched through the saddle webs and top contact carrier. A chassis clip supports the NTC run. |
 
 The mic and LED boards grew from the earlier empty-seat allocations to accommodate
 the headers. Their acoustic/light axes are unchanged. The main-board connector
-positions also differ from the earlier placement drawing: J_USB is at u = 4,
-Z = 22; J_LED at u = −9, Z = 124; J_NTC at u = −7, Z = 103; J_PTT at u = 4.5,
+positions also differ from the earlier placement drawing: J_USB is at u = 7,
+Z = 25; J_LED at u = −8, Z = 124; J_NTC at u = −7, Z = 103; J_PTT at u = 4.5,
 Z = 110, with its plug exiting upward. The amplifier and J_SPK now have separate
-envelopes. These changes are explicit in the assembly source; the older placement
-image is not the complete assembly layout.
+envelopes. The 9.5 mm wide 7-way J_LED forced the radio module to u = 2.25, the
+SWD pads to u = 10.25 and the amplifier envelope to u = −0.75. These changes are
+explicit in the assembly source; the older placement image is not the complete
+assembly layout.
+
+The 72.0 mm inside length holds a 70.0 mm stack: the 65.0 mm cell, a 0.5 mm plate
+and 3.0 mm coil at the negative end, and a 0.5 mm plate and 1.0 mm button at the
+positive end. The spring pushes the cell up to 2.0 mm above the Z = 20…85 envelope
+the fit report measures against, so the strap, saddle-groove and NTC clearances in
+that report are nominal positions, not worst case.
+
+## Field-unit variant
+
+`.venv/bin/python -m cad.enclosure --variant field` and
+`.venv/bin/python -m cad.assembly --variant field` write to `output/field-unit/`.
+The main PCB, its connectors, the USB daughterboard, shoe and side opening, the
+NTC and the radio module are replaced by a 25.4 × 135 mm stripboard
+(`stripboard_template.step`: ten M2 holes, two 8 mm lead windows, and a notch
+cut from the Y+ top corner where the board would otherwise overlap an existing
+seam pin pad) carrying a flat-soldered XIAO nRF52840 Sense (Z 125.8…146.8,
+USB-C through a 7.5 × 13 mm opening in the top wall at X 7.05) and a MAX98357A
+breakout on one header row (Z 92…111.4). The microphone is an Adafruit 3492
+breakout in a 14 × 12.8 mm seat. Six leads: MIC 4, PTT 2, SPK 2, LED 5, BAT+ 1,
+BAT− 1. The PTT tunnel leaves only a 0.14 mm skin on the PCB rail's back face,
+which will not print, so the lead lies in a groove open toward the wall with a
+2.1 mm gap. Everything else is the product geometry. The power switch is
+fitted but unwired.
 
 ## Dimensions and sources
 
@@ -80,11 +105,15 @@ existing enclosure. The daughterboards and printed mounts are custom designs.
 | Adjustable parameter | Current value |
 |---|---:|
 | Signal-wire insulation diameter | 0.8 mm |
-| Battery-wire insulation diameter | 1.2 mm |
+| Battery-wire insulation diameter | 1.4 mm |
 | Signal / battery bend radius | 2 / 4 mm |
 | Button free play / switch travel | 0.10 / 0.25 mm |
 | PCB pilot diameter | 1.6 mm |
 | Existing enclosure mating clearance | 0.30 mm diametral |
+| Positive collar drop below button tip (`POSITIVE_COLLAR_DROP`) | 0.4 mm |
+| Field-unit top-wall USB-C opening (`FIELD_TOP_USBC`) | centre X, centre Y, X size, Y size, corner radius |
+| Field-unit stripboard lead windows (`FIELD_BOARD_WINDOWS`) | centre Z, Z size, each 8 mm wide |
+| Field-unit mic board outline (`FIELD_MIC_BOARD`) | 14.0 × 12.8 mm, Adafruit 3492 |
 
 Harness lengths in the report describe the modeled centerlines, not cut lengths.
 Allow for contacts, terminations, strain relief and assembly slack when making
@@ -115,9 +144,10 @@ under cable passages and internal mounts in the slicer. Install the speaker brid
 before the LED board to preserve screwdriver access, then fit the PCB, harnesses
 and cell. Remove the cell for PCB screw access.
 
-Confirm the purchased speaker, cell-contact/spring arrangement, insulation sizes,
-connector tolerances, screw threads and adhesive before committing to hardware.
-The contact cylinders are space reservations, not a validated spring holder or
+Confirm the purchased speaker, cell-contact/spring arrangement, insulation
+sizes, connector tolerances, screw threads and adhesive before committing to
+hardware. The contact envelopes are space reservations dimensioned from the
+Keystone 5201 and 5223 drawings, not a validated spring holder or
 reverse-insertion mechanism. Print and assemble a prototype to check tolerances,
 USB insertion loads, strap tension, cap return and adhesive retention. The model
 checks nominal geometry; it does not prove strength, RF clearance performance,

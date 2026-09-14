@@ -23,10 +23,16 @@ from cad import enclosure as e
 # Raytac module: manufacturer approval sheet, version L, pp. 7 and 11.
 # JST SH: eSH.pdf, p. 3: side-entry body height 2.9, depth 4.25+0.7.
 # Group envelopes include passives/routing space; they are design allocations.
+# cad/assembly.py overrides four of these coordinates for the mechanical model:
+#   J_USB  Z 31 -> 25   (clears the Z = 16 screw heads)
+#   J_LED  Z 123 -> 124
+#   J_NTC  u -6 -> -7
+#   J_PTT  u 6 -> 4.5
 # name, board u, enclosure Z, width, length, height, category
 PLACEMENTS = [
     ("J_MIC", -4, 21, 6.5, 5.5, 3.0, "connector"),
-    ("J_USB", 4, 31, 6.5, 5.5, 3.0, "connector"),
+    # The 10.5 mm wide 8-way J_USB envelope sits at u >= 6.75 to clear the cell tie at Z = 27.
+    ("J_USB", 7, 31, 10.5, 5.5, 3.0, "connector"),
     ("J_PWR", 0, 44, 4.5, 5.5, 3.0, "connector"),
     ("CHARGE / CC", 0, 57, 16, 14, 1.5, "power"),
     ("3V3 BUCK-BOOST", 0, 79, 14, 10, 2.0, "power"),
@@ -35,9 +41,11 @@ PLACEMENTS = [
     ("J_NTC", -6, 103, 4.5, 5.5, 3.0, "connector"),
     ("J_PTT", 6, 110, 4.5, 5.5, 3.0, "connector"),
     ("AMP + J_SPK", -3, 112, 9, 10, 3.0, "audio"),
-    ("J_LED", -9, 123, 5.5, 5.5, 3.0, "connector"),
-    ("SWD PADS", 9, 123, 5, 6, 0.1, "debug"),
-    ("MDBT50Q-1MV2", 0, 130.25, 10.5, 15.5, 2.05, "radio"),
+    # The 9.5 mm wide 7-way J_LED envelope reaches the board edge, so the module
+    # and the SWD pads sit off centre to clear it.
+    ("J_LED", -8, 123, 9.5, 5.5, 3.0, "connector"),
+    ("SWD PADS", 10.25, 123, 5, 6, 0.1, "debug"),
+    ("MDBT50Q-1MV2", 2.25, 130.25, 10.5, 15.5, 2.05, "radio"),
 ]
 SCREW_STATIONS = (16, 38, 115)  # Six screws; all ten existing holes retained.
 HEAD_DIAMETER, HEAD_HEIGHT = 4.5, 1.8  # Envelope, confirm purchased M2 screws.
@@ -93,7 +101,7 @@ def check(chassis, cover, board, parts):
         ),
         (
             "LED board",
-            8,
+            e.LED_BOARD_X,
             e.DEVICE_HEIGHT - e.LED_TOP_OFFSET,
             e.LED_BOARD_WIDTH,
             e.LED_BOARD_HEIGHT,

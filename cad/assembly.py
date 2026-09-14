@@ -17,7 +17,7 @@ from hardware.pcb import design as pcb
 OUT = Path('output/full-assembly')
 FIT = 0.3
 WIRE_OD = 0.8  # AWG28 insulation envelope; verify purchased pre-crimped leads.
-BAT_WIRE_OD = 1.2  # AWG24–26 insulation envelope, not bare copper diameter.
+BAT_WIRE_OD = 1.4  # JST ASPHSPH24K305, 24 AWG UL1007; not bare copper diameter.
 BEND_RADIUS = 2.0  # Minimum centerline radius; supplier may require more.
 USB_SIZE = (7.35, 8.94, 3.31)  # GCT USB4105 drawing rev B4, gct.co/files/drawings/usb4105.pdf
 SWITCH_SIZE = (3.4, 6.4, 6.4)  # Omron B3F-1000 body, includes +/-0.2 width tolerance.
@@ -28,11 +28,41 @@ PTT_CROWN_BASE = (27.0, 47.0, 9.0)  # Y width, Z height, corner radius
 PTT_CROWN_BEVEL = 2.0  # 45 deg, so the top face is 2*BEVEL smaller each way
 PTT_DOT = (1.0, 0.5, 1.5)  # diameter, height, pitch
 SPEAKER_Z = e.DEVICE_HEIGHT - e.SPEAKER_TOP_OFFSET - e.SPEAKER_DIAMETER / 2
-LED_SOCKET_X = e.LED_BOARD_X - 2.2  # SH socket behind the LED board, offset towards X+
+LED_SOCKET_X = e.LED_BOARD_X  # 7-way header centred on the 12 mm board
 WALL_INNER_Y = -(e.DEVICE_WIDTH/2 - e.WALL_THICKNESS)  # inside face of the front wall
 BAT_NEG_CHANNEL_X = -10.5  # lead centreline along the front wall, clear of the mic seat
 BAT_NEG_CHANNEL_Y = WALL_INNER_Y + 0.1 + BAT_WIRE_OD/2
 BAT_NEG_CHANNEL_Z = (22.5, 97.0)  # straight run; 4 mm bends lead in and out beyond it
+
+# Nine captive harnesses. Ends terminate on the corresponding mated connector
+# or insulated solder/contact body. Exact pin mapping lives in DESIGN.md.
+# The 8-conductor USB run crosses under the PCB bottom edge at Z = 10.9.
+PRODUCT_ROUTES = {
+    'MIC': (4, WIRE_OD, [(8.4,-4,15.25),(8.4,-4,6),(-13.75,-4,6),(-13.75,-4,11.5),(-13.75,-13.75,11.5),(-9.25,-13.75,11.5)], 'J_MIC','mic_J_SH_mated'),
+    'USB': (8, WIRE_OD, [(7.6,4,19.25),(7.6,4,10.9),(7.6,14.5,10.9),(13.9,14.5,10.9),(13.9,14.5,26.3),(15.3,4.25,26.3)], 'J_USB','USB_J_SH_mated'),
+    'PWR': (2, WIRE_OD, [(8.4,0,38.25),(8.4,0,33),(8.4,15,33),(13.9,15,33),(13.9,15,44),(12.9,3.85,44)], 'J_PWR','PWR_terminals'),
+    'PTT': (2, WIRE_OD, [(8.4,4.5,115.75),(8.4,4.5,120),(8.4,15,120),(13.9,15,120),(13.9,15,105),(12.9,3.85,105)], 'J_PTT','PTT_terminals'),
+    'SPK': (2, WIRE_OD, [(8.4,-3,105.75),(8.4,-3,98),(0,-3,98),(0,-10,98),(5,-10,SPEAKER_Z-4),(5,-14.3,SPEAKER_Z-4)], 'J_SPK','speaker'),
+    'LED': (7, WIRE_OD, [(8.4,-9,119.3),(4,-9,119.3),(4,-9,127),(LED_SOCKET_X,-9,132),(LED_SOCKET_X,-13.75,132),(LED_SOCKET_X,-13.75,135.5)], 'J_LED','LED_J_SH_mated'),
+    'BAT_POS': (1, BAT_WIRE_OD, [(1.9,2,101),(-3,2,101),(-3,8,95),(-3,8,86.5),(-3,2,86.5)], 'J_BAT','cell_positive_contact'),
+    'BAT_NEG': (1, BAT_WIRE_OD, [(1.9,4,101),(BAT_NEG_CHANNEL_X,4,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,18.5),(-3,-2,18.5)], 'J_BAT','cell_negative_contact'),
+    'NTC': (2, WIRE_OD, [(8.4,-7,97.25),(8.4,-7,91),(6,-11,91),(6,-11,58),(1,-11,58),(-2,-9.8,58)], 'J_NTC','NTC'),
+}
+
+# Field unit (hardware/PROTOTYPE.md): solder terminations on the stripboard, XIAO and
+# breakouts; the cell leads leave the XIAO's underside pads through a stripboard window,
+# run down the rail channel behind the board and return through a second window.
+FIELD_ROUTES = {
+    'MIC': (4, WIRE_OD, [(8.9,-4,18),(8.9,-4,12),(1,-4,12),(1,-14.5,12),(1,-14.5,15)], 'field_stripboard','mic_PCB'),
+    # X 15.0 descent passes behind the clipped amp pins; Y 4.2 clears the switch body.
+    'PTT': (2, WIRE_OD, [(8.9,4.5,116),(8.9,4.5,120),(8.9,15,120),(15.0,15,120),(15.0,15,105),(15.0,4.2,105),(12.9,4.2,105)], 'field_stripboard','PTT_terminals'),
+    'SPK': (2, WIRE_OD, [(6,-11,98),(6,-11,116),(6,-14.3,116)], 'MAX98357A_breakout','speaker'),
+    # X 8.4 keeps the 5-wide bundle off the board face, Y -9.8 off the speaker bridge,
+    # Z 132.5 off the chassis above the speaker chamber.
+    'LED': (5, WIRE_OD, [(8.4,-9.8,120),(8.4,-9.8,124),(3,-9.8,124),(3,-9.8,132.5),(3,-14.75,132.5),(3,-14.75,136.5)], 'field_stripboard','LED_PCB'),
+    'BAT_POS': (1, BAT_WIRE_OD, [(9.0,-1,136.3),(13.5,-1,136.3),(13.5,-1,118),(-3,-1,118),(-3,8,118),(-3,8,86.5),(-3,2,86.5)], 'XIAO_nRF52840','cell_positive_contact'),
+    'BAT_NEG': (1, BAT_WIRE_OD, [(9.0,1,136.3),(13.5,1,136.3),(13.5,1,120),(-3,1,120),(-3,16,120),(-3,16,7),(-3,8,7),(-3,8,18.5),(-3,2,18.5)], 'XIAO_nRF52840','cell_negative_contact'),
+}
 
 
 def box(size, center):
@@ -89,15 +119,29 @@ def rounded_path(points, radius):
     return cq.Wire.assembleEdges(edges)
 
 
+def bundle_offsets(count, diameter):
+    """Conductor centre offsets in the bundle cross-section; 5+ leads form two rows."""
+    pitch = diameter+0.12
+    if count <= 4:
+        return {1: [(0,0)], 2: [(-pitch/2, 0), (pitch/2, 0)],
+                3: [(-pitch/2, -pitch/3), (pitch/2, -pitch/3), (0, pitch*2/3)],
+                4: [(x*pitch/2,y*pitch/2) for x in (-1,1) for y in (-1,1)]}[count]
+    per_row = (count+1)//2
+    xs = [(i-(per_row-1)/2)*pitch for i in range(per_row)]
+    offsets = [(x, -pitch/2) for x in xs] + [(x, pitch/2) for x in xs]
+    return offsets[:count]
+
+
+def bundle_radius(count, diameter):
+    return max(math.hypot(x, y) for x, y in bundle_offsets(count, diameter)) + diameter/2
+
+
 def harness(points, count, diameter):
     path = rounded_path(points, 4.0 if diameter==BAT_WIRE_OD else BEND_RADIUS)
     normal = (cq.Vector(*points[1])-cq.Vector(*points[0])).normalized()
     plane = cq.Plane(origin=points[0], normal=normal)
-    # Individual insulated conductors; four leads occupy a 2x2 bundle.
-    pitch = diameter+0.12
-    offsets = {1: [(0,0)], 2: [(-pitch/2, 0), (pitch/2, 0)],
-               3: [(-pitch/2, -pitch/3), (pitch/2, -pitch/3), (0, pitch*2/3)],
-               4: [(x*pitch/2,y*pitch/2) for x in (-1,1) for y in (-1,1)]}[count]
+    # Individual insulated conductors in the bundle cross-section.
+    offsets = bundle_offsets(count, diameter)
     wires = []
     for x,y in offsets:
         profile = cq.Workplane(plane).center(x,y).circle(diameter/2)
@@ -105,8 +149,8 @@ def harness(points, count, diameter):
     return wires, path.Length()
 
 
-def build():
-    chassis, cover = e.split_enclosure(e.build_enclosure())
+def build(variant='product'):
+    chassis, cover = e.split_enclosure(e.build_enclosure(variant), variant)
     parts, colors, contacts, prints = {}, {}, {}, {}
 
     def add(name, body, color='#aaaaaa'):
@@ -117,23 +161,35 @@ def build():
     def contact(a,b,reason,region):
         contacts[frozenset((a,b))] = (reason,region)
 
+    board = 'main_PCB' if variant == 'product' else 'field_stripboard'
     add('chassis',chassis,'#a9bacb')
     add('cover',cover,'#c3cbd3')
-    add('main_PCB',pcb.board_with_holes(),'#24784a')
     add('cell_18650',e.battery_envelope(),'#546db4')
-    placements=[(n,u,22 if n=='J_USB' else 124 if n=='J_LED' else z,w,l,h,c) for n,u,z,w,l,h,c in pcb.PLACEMENTS]
-    placements=[(n,4.5 if n=='J_PTT' else -7 if n=='J_NTC' else u,z,w,l,h,c) for n,u,z,w,l,h,c in placements]
-    for p in placements:
-        add(p[0].replace(' / ','_').replace(' + ','_'),pcb.component_box(p),pcb.COLORS[p[-1]])
-    # SH mated plug extensions include insertion overlap in a single envelope.
-    for p in placements:
-        name,u,z,w,length,h,cat = p
-        if name.startswith('J_') and name != 'J_BAT':
-            parts[name] = parts[name].fuse(box((h,w,3),(8.4,u,z+(length/2+1.5)*(1 if name=='J_PTT' else -1))))
-    # Separate speaker connector from its original combined placement allocation.
-    del parts['AMP_J_SPK']
-    add('amplifier_allocation',box((1.5,5,4),(9.15,-3,118)),'#e99991')
-    add('J_SPK',box((3,4.5,8.5),(8.4,-3,110)),'#edba65')
+    if variant == 'product':
+        add('main_PCB',pcb.board_with_holes(),'#24784a')
+        # J_USB sits at Z = 25: its 10.5 mm wide plug clears the Z = 16 screw heads.
+        placements=[(n,u,25 if n=='J_USB' else 124 if n=='J_LED' else z,w,l,h,c) for n,u,z,w,l,h,c in pcb.PLACEMENTS]
+        placements=[(n,4.5 if n=='J_PTT' else -7 if n=='J_NTC' else u,z,w,l,h,c) for n,u,z,w,l,h,c in placements]
+        for p in placements:
+            add(p[0].replace(' / ','_').replace(' + ','_'),pcb.component_box(p),pcb.COLORS[p[-1]])
+        # SH mated plug extensions include insertion overlap in a single envelope.
+        for p in placements:
+            name,u,z,w,length,h,cat = p
+            if name.startswith('J_') and name != 'J_BAT':
+                parts[name] = parts[name].fuse(box((h,w,3),(8.4,u,z+(length/2+1.5)*(1 if name=='J_PTT' else -1))))
+        # Separate speaker connector from its original combined placement allocation.
+        del parts['AMP_J_SPK']
+        # Shifted towards Y+ inside the AMP allocation to clear the wider J_LED plug.
+        add('amplifier_allocation',box((1.5,4.5,4),(9.15,-0.75,118)),'#e99991')
+        add('J_SPK',box((3,4.5,8.5),(8.4,-3,110)),'#edba65')
+    else:
+        add('field_stripboard', e.field_stripboard_template(), '#8a6d3b')
+        # XIAO nRF52840 Sense soldered flat by its castellations, USB-C end at the top wall.
+        add('XIAO_nRF52840', box((4.46,17.78,21.0),(7.67,0,136.3)), '#24784a')
+        add('XIAO_USBC', box((3.21,8.94,1.5),(7.045,0,147.55)), '#8f8f8f')
+        # MAX98357A breakout on one 7-pin header row at Y = 6.1; pins clipped 1.5 mm behind the board.
+        add('MAX98357A_breakout', box((5.5,17.8,19.4),(7.15,-1.5,101.7)), '#24784a')
+        add('amp_header_pins', box((1.5,1.0,15.24),(12.3,6.1,101.7)), '#8f8f8f')
     for u in (-10,10):
         for z in pcb.SCREW_STATIONS:
             name=f'PCB_M2_{u}_{z}'
@@ -150,7 +206,7 @@ def build():
         contact(name,'chassis','M2 closure threads engage the blind pilot',e.seam_cylinder(u,z,1.01,-.01,3.52).val())
 
     # Audio boards, bottom-port mic with acoustic through-hole, and LED emitters.
-    for name,x,z,w,h in [('mic',1,10,e.MIC_BOARD_WIDTH,e.MIC_BOARD_HEIGHT),('LED',e.LED_BOARD_X,140,e.LED_BOARD_WIDTH,e.LED_BOARD_HEIGHT)]:
+    for name,x,z,w,h in [('mic',1,10,*e.mic_board_size(variant)),('LED',e.LED_BOARD_X,140,e.LED_BOARD_WIDTH,e.LED_BOARD_HEIGHT)]:
         b=box((w,1.6,h),(x,-16.05,z))
         if name=='mic':
             b=b.cut(cylinder(.5,2,(x,-17.1,z),(0,1,0)))
@@ -160,38 +216,46 @@ def build():
         # Existing seat occupies most perimeter: remove only existing solid from gasket.
         gasket=gasket.cut(parts['chassis'])
         add(name+'_gasket',gasket,'#333333')
-    mic=box((4,1.2,3),(1,-14.65,10)).cut(cylinder(.5,1.4,(1,-15.5,10),(0,1,0)))
-    add('IM69D130',mic,'#d0d0d0')
-    add('mic_J_SH_mated',box((7.95,3,6.5),(-5.275,-13.75,10.75)),'#edba65')
-    # LED socket behind the board, offset towards X+ to avoid the speaker cup.
-    add('LED_J_SH_mated',box((5.5,3,8.5),(LED_SOCKET_X,-13.75,139.75)),'#edba65')
+    if variant == 'product':
+        mic=box((4,1.2,3),(1,-14.65,10)).cut(cylinder(.5,1.4,(1,-15.5,10),(0,1,0)))
+        add('IM69D130',mic,'#d0d0d0')
+        add('mic_J_SH_mated',box((7.95,3,6.5),(-5.275,-13.75,10.75)),'#edba65')
+        # LED socket behind the board.
+        add('LED_J_SH_mated',box((9.5,3,8.5),(LED_SOCKET_X,-13.75,139.75)),'#edba65')
+    else:
+        # Adafruit 3492: top-port MP34DT01 faces the wall inside the seat window.
+        add('mic_MP34DT01', box((3,1.2,4),(1,-17.45,10)), '#d0d0d0')
     for x in e.LED_POSITIONS_X:
-        add(f'LED_{x}',box((2,.9,2),(x,-17.30,140)),'#eee6ab')
+        # 3 mm through-hole RGB LED: 1 mm flange on the board face, dome through the wall.
+        flange=cylinder(1.9,1.0,(x,-16.85,140),(0,-1,0))
+        dome=cylinder(1.5,4.4,(x,-17.85,140),(0,-1,0))
+        add(f'LED_{x}',flange.fuse(dome),'#eee6ab')
     add('speaker',cylinder(10,e.SPEAKER_BODY_DEPTH,(0,-18.3,SPEAKER_Z),(0,1,0)),'#50565e')
     gasket=cylinder(10,.1,(0,-18.4,SPEAKER_Z),(0,1,0)).cut(cylinder(9,.2,(0,-18.45,SPEAKER_Z),(0,1,0)))
     add('speaker_gasket',gasket,'#333333')
 
-    # Charging daughterboard perpendicular to main board; receptacle faces X+.
-    # Shell rounded cross-section follows the port, with solid envelope behind it.
-    shell=(cq.Workplane('YZ',origin=(20.05,0,31)).rect(USB_SIZE[1],USB_SIZE[2])
-           .extrude(-USB_SIZE[0]).edges('|X').fillet(1.3).val())
-    # Model the receptacle opening instead of a solid metal plug.
-    shell=shell.cut(box((5,7.6,2.1),(19.2,0,31)))
-    add('USB4105',shell,'#b7b8ba')
-    add('USB_PCB',box((6.6,13,1),(15.1,0,28.845)),'#24784a')
-    add('USB_J_SH_mated',box((6.5,8.5,3),(15.1,0,26.845)),'#edba65')
-    # Shoe supports board edges and rear of socket. Front/back stops take insertion load.
-    shoe=box((7.7,16,1.5),(15.65,0,27.595))
-    shoe=shoe.cut(box((6.2,10,4),(15.8,0,27.6)))
-    for y in (-7.25,7.25):
-        shoe=shoe.fuse(box((7.7,1.5,4),(15.65,y,28.845)))
-    shoe=shoe.fuse(box((1.5,16,5.5),(12.55,0,29.595)))
-    shoe=shoe.cut(parts['main_PCB'])
-    # This shoe is bonded over two broad wall tabs; no screw into thin port wall.
-    for y in (-6,6):
-        shoe=shoe.fuse(box((2.0,3,6),(18.0,y,28.0)))
-    shoe=shoe.cut(parts['chassis']).cut(parts['USB_PCB']).cut(parts['USB4105']).cut(parts['USB_J_SH_mated'])
-    add('USB_shoe',shoe,'#df984e'); prints['USB_shoe']=shoe
+    if variant == 'product':
+        # Charging daughterboard perpendicular to main board; receptacle faces X+.
+        # Shell rounded cross-section follows the port, with solid envelope behind it.
+        shell=(cq.Workplane('YZ',origin=(20.05,0,31)).rect(USB_SIZE[1],USB_SIZE[2])
+               .extrude(-USB_SIZE[0]).edges('|X').fillet(1.3).val())
+        # Model the receptacle opening instead of a solid metal plug.
+        shell=shell.cut(box((5,7.6,2.1),(19.2,0,31)))
+        add('USB4105',shell,'#b7b8ba')
+        add('USB_PCB',box((6.6,13,1),(15.1,0,28.845)),'#24784a')
+        add('USB_J_SH_mated',box((6.5,11.0,3),(15.1,0,26.845)),'#edba65')
+        # Shoe supports board edges and rear of socket. Front/back stops take insertion load.
+        shoe=box((7.7,16,1.5),(15.65,0,27.595))
+        shoe=shoe.cut(box((6.2,12.0,4),(15.8,0,27.6)))
+        for y in (-7.25,7.25):
+            shoe=shoe.fuse(box((7.7,1.5,4),(15.65,y,28.845)))
+        shoe=shoe.fuse(box((1.5,16,5.5),(12.55,0,29.595)))
+        shoe=shoe.cut(parts['main_PCB'])
+        # This shoe is bonded over two broad wall tabs; no screw into thin port wall.
+        for y in (-6,6):
+            shoe=shoe.fuse(box((2.0,3,6),(18.0,y,28.0)))
+        shoe=shoe.cut(parts['chassis']).cut(parts['USB_PCB']).cut(parts['USB4105']).cut(parts['USB_J_SH_mated'])
+        add('USB_shoe',shoe,'#df984e'); prints['USB_shoe']=shoe
 
     # Separate tactile switches, retained with thin perimeter adhesive in rigid carriers.
     # Mechanical load goes through the carrier into chassis wall/rails, never main PCB.
@@ -243,12 +307,23 @@ def build():
         cap=cap.fuse(cylinder(2,1,(21.0,0,z),(1,0,0)))
         add(label+'_TPU_cap',cap,'#675683'); prints[label+'_TPU_cap']=cap
 
-    # Contact envelopes + insulating washers within existing end carriers.
-    for label,z,axis in [('negative',20,(0,0,-1)),('positive',85,(0,0,1))]:
-        add('cell_'+label+'_contact',cylinder(2,2.8,(-3,0,z),axis),'#b9b9b9')
-        washer=cylinder(6,.2,(-3,0,z+axis[2]*2.8),axis).cut(cylinder(2.2,.3,(-3,0,z+axis[2]*2.75),axis))
+    # Keystone 5201 spring and 5223 button envelopes on the end carriers, with
+    # their insulating washers. The coil length is the compressed working height.
+    cs=e.CONTACT_SPACE
+    # Negative: 5201 coil, Ø8 x 3.0 compressed. Positive: 5223 button, Ø5 x 1.0.
+    for label,z,axis,r,length in [('negative',20,(0,0,-1),4.0,3.0),('positive',85,(0,0,1),2.5,1.0)]:
+        plate=box((11.2,12.0,0.5),(-3,0,z+axis[2]*(cs-0.25)))
+        contact_body=cylinder(r,length,(-3,0,z+axis[2]*(cs-0.5)),(0,0,-axis[2]))
+        add('cell_'+label+'_contact',plate.fuse(contact_body),'#b9b9b9')
+        # Washer clears the tip bore, the collar on the positive end, and the
+        # 1.4 mm lead where it bends in towards the contact.
+        washer=cylinder(5.5,.2,(-3,0,z+axis[2]*(cs-0.8)),axis).cut(cylinder(r+0.1,.3,(-3,0,z+axis[2]*(cs-0.85)),axis))
         add('cell_'+label+'_insulator',washer,'#dcad59')
-    add('NTC',box((2,1,3),(-3,-9.8,58)),'#dcad59')
+        if label=='positive':
+            # The plate is let into the reverse-insertion collar on its carrier.
+            contact('cell_positive_contact','chassis','cell contact plate bears on carrier',plate)
+    if variant == 'product':
+        add('NTC',box((2,1,3),(-3,-9.8,58)),'#dcad59')
 
     # Purchased tie envelopes run in new saddle grooves (0.15 radial clearance).
     for z in (27,71):
@@ -258,8 +333,8 @@ def build():
         groove=cylinder(10.15,2.8,(-3,0,z-1.4),(0,0,1)).cut(cylinder(9.45,3,(-3,0,z-1.5),(0,0,1)))
         parts['chassis']=parts['chassis'].cut(groove)
     # A stepped bridge clears the PCB edge. Vertical screws avoid the PCB rails.
-    # The plate sits behind the 5.3 mm speaker body; two risers reach forward to
-    # the ears through the gaps between the speaker rim and the PCB slab.
+    # The plate bears on the top 2.5 mm of the speaker's back face; two risers
+    # reach forward to the ears through the gaps between the speaker rim and the PCB slab.
     # Raised clear of the J_LED connector below it.
     bridge_z=SPEAKER_Z+9
     bridge=box((23.9,1.2,3),(-2.55,-11.8,bridge_z))
@@ -282,34 +357,24 @@ def build():
         screw=cylinder(2,1.8,(x,-15.5,bridge_z+1.5),(0,0,1)).fuse(cylinder(1,5,(x,-15.5,bridge_z+1.5),(0,0,-1)))
         add(name,screw)
         contact(name,'chassis','M2 threads engage speaker lug pilot',cylinder(1.01,3.52,(x,-15.5,bridge_z+.01),(0,0,-1)))
-    bridge=bridge.cut(cylinder(10.3,8,(0,-19,SPEAKER_Z),(0,1,0)))
+    bridge=bridge.cut(cylinder(10.3,6.5,(0,-19,SPEAKER_Z),(0,1,0)))
     # Rebate the bridge, preserving the bearing plane under its mounting ears.
     parts['chassis']=parts['chassis'].cut(bridge)
     add('speaker_bridge',bridge,'#df984e'); prints['speaker_bridge']=bridge
 
-    # Eight captive harnesses. Ends terminate on the corresponding mated connector
-    # or insulated solder/contact body. Exact pin mapping lives in DESIGN.md.
-    routes={
-        'MIC': (4, WIRE_OD, [(8.4,-4,15.25),(8.4,-4,6),(-13.75,-4,6),(-13.75,-4,11.5),(-13.75,-13.75,11.5),(-9.25,-13.75,11.5)], 'J_MIC','mic_J_SH_mated'),
-        'USB': (4, WIRE_OD, [(8.4,4,16.25),(8.4,4,11.5),(8.4,14.5,11.5),(13.9,14.5,11.5),(13.9,14.5,26.845),(15.3,4.25,26.845)], 'J_USB','USB_J_SH_mated'),
-        'PWR': (2, WIRE_OD, [(8.4,0,38.25),(8.4,0,33),(8.4,15,33),(13.9,15,33),(13.9,15,44),(12.9,3.85,44)], 'J_PWR','PWR_terminals'),
-        'PTT': (2, WIRE_OD, [(8.4,4.5,115.75),(8.4,4.5,120),(8.4,15,120),(13.9,15,120),(13.9,15,105),(12.9,3.85,105)], 'J_PTT','PTT_terminals'),
-        'SPK': (2, WIRE_OD, [(8.4,-3,105.75),(8.4,-3,98),(0,-3,98),(0,-10,98),(5,-10,SPEAKER_Z-4),(5,-14.3,SPEAKER_Z-4)], 'J_SPK','speaker'),
-        'LED': (3, WIRE_OD, [(8.4,-9,118.25),(4,-9,118.25),(4,-9,127),(LED_SOCKET_X,-9,132),(LED_SOCKET_X,-13.75,132),(LED_SOCKET_X,-13.75,135.5)], 'J_LED','LED_J_SH_mated'),
-        'BAT_POS': (1, BAT_WIRE_OD, [(1.9,2,101),(-3,2,101),(-3,8,95),(-3,8,86.5),(-3,2,86.5)], 'J_BAT','cell_positive_contact'),
-        'BAT_NEG': (1, BAT_WIRE_OD, [(1.9,4,101),(BAT_NEG_CHANNEL_X,4,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,101),(BAT_NEG_CHANNEL_X,BAT_NEG_CHANNEL_Y,18.5),(-3,-2,18.5)], 'J_BAT','cell_negative_contact'),
-        'NTC': (2, WIRE_OD, [(8.4,-7,97.25),(8.4,-7,91),(6,-11,91),(6,-11,58),(1,-11,58),(-2,-9.8,58)], 'J_NTC','NTC'),
-    }
     lengths={}
-    for name,(count,od,points,start,end) in routes.items():
+    for name,(count,od,points,start,end) in (FIELD_ROUTES if variant=='field' else PRODUCT_ROUTES).items():
         wires,length=harness(points,count,od)
         if name in ('USB','PWR','PTT'):
             path=rounded_path(points,BEND_RADIUS)
             plane=cq.Plane(origin=points[0],normal=cq.Vector(*points[1])-cq.Vector(*points[0]))
-            tunnel=cq.Workplane(plane).circle(1.2 if count==4 else 1.02).sweep(path,isFrenet=False).val()
+            tunnel=cq.Workplane(plane).circle(bundle_radius(count,od)+0.3).sweep(path,isFrenet=False).val()
             parts['chassis']=parts['chassis'].cut(tunnel)
             mount='USB_shoe' if name=='USB' else name+'_carrier'
             parts[mount]=parts[mount].cut(tunnel)
+            # The rail strip is applied with a notch around the lead.
+            for tape in [k for k in parts if k.startswith(name+'_rail_tape')]:
+                parts[tape]=parts[tape].cut(tunnel)
             prints[mount]=parts[mount]
         lengths[name]={'conductors':count,'insulated_diameter_mm':od,'centerline_mm':round(length,1),'start':start,'end':end}
         for i,wire in enumerate(wires):
@@ -330,10 +395,12 @@ def build():
     stem=box((2.5,6,2.5),(6,-15.9,76))
     parts['chassis']=parts['chassis'].fuse(stem).fuse(clip)
     # Header bearing areas must actually fit their custom boards; plugs may overhang.
-    for board,probe in [('mic_PCB',box((4.95,.1,6.5),(-3.775,-15.3,10.75))),
-                        ('LED_PCB',box((5.5,.1,5.5),(LED_SOCKET_X,-15.3,141.25))),
-                        ('USB_PCB',box((6.5,5.5,.1),(15.1,-1.5,28.395)))]:
-        assert probe.cut(parts[board]).Volume()<1e-5, f'{board}: header bearing area off board'
+    # Product only: the field unit solders its leads directly, with no SH headers.
+    if variant == 'product':
+        for pcb_name,probe in [('mic_PCB',box((4.95,.1,6.5),(-3.775,-15.3,10.75))),
+                               ('LED_PCB',box((9.5,.1,5.5),(LED_SOCKET_X,-15.3,141.25))),
+                               ('USB_PCB',box((6.5,10.0,.1),(15.1,0,28.395)))]:
+            assert probe.cut(parts[pcb_name]).Volume()<1e-5, f'{pcb_name}: header bearing area off board'
     return parts,colors,contacts,prints,lengths
 
 
@@ -361,10 +428,11 @@ def inspect(parts,contacts):
 
 
 
-def motion_checks(parts):
+def motion_checks(parts,board='main_PCB'):
     """Cover sampled along its pin axis; button center checked through its stroke."""
     errors=[]
-    e.check_assembly(cq.Workplane(obj=parts['chassis']),cq.Workplane(obj=parts['cover']))
+    variant='field' if board=='field_stripboard' else 'product'
+    e.check_assembly(cq.Workplane(obj=parts['chassis']),cq.Workplane(obj=parts['cover']),variant)
     for distance in (.5,2,4,10,25,50):
         cover=parts['cover'].translate((-distance/math.sqrt(2),distance/math.sqrt(2),0))
         for name,shape in parts.items():
@@ -384,40 +452,45 @@ def motion_checks(parts):
         center=parts[label+'_TPU_cap'].intersect(region)
         for travel in (ACTUATOR_GAP,ACTUATOR_GAP+SWITCH_THROW):
             moved=center.translate((-travel,0,0))
-            for name in ('chassis','cover','main_PCB',label+'_carrier',label+'_switch'):
+            for name in ('chassis','cover',board,label+'_carrier',label+'_switch'):
                 if moved.intersect(parts[name]).Volume()>1e-5:
                     errors.append(f'{label} center catches {name} at {travel} mm travel')
             assert abs(moved.BoundingBox().xmin-(17.5+ACTUATOR_GAP-travel))<1e-6
     return errors
 
-def main():
-    OUT.mkdir(parents=True,exist_ok=True)
-    (OUT/'fit-report.json').write_text(json.dumps({'status':'BUILDING'})+'\n')
-    parts,colors,contacts,prints,lengths=build()
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--variant', choices=('product','field'), default='product')
+    variant = parser.parse_args(argv).variant
+    out = OUT if variant == 'product' else Path('output/field-unit')
+    out.mkdir(parents=True,exist_ok=True)
+    (out/'fit-report.json').write_text(json.dumps({'status':'BUILDING'})+'\n')
+    parts,colors,contacts,prints,lengths=build(variant)
     errors,distances=inspect(parts,contacts)
     if not errors:
         print('Static fit passed; checking cover and button travel',flush=True)
-        errors.extend(motion_checks(parts))
-    report={'status':'FAIL' if errors else 'CHECKED','errors':errors,'near_pairs':distances,'harnesses':lengths,'cover_withdrawal_mm':[.5,2,4,10,25,50],
+        errors.extend(motion_checks(parts,'main_PCB' if variant=='product' else 'field_stripboard'))
+    report={'variant':variant,'status':'FAIL' if errors else 'CHECKED','errors':errors,'near_pairs':distances,'harnesses':lengths,'cover_withdrawal_mm':[.5,2,4,10,25,50],
             'button_center_travel_mm':[ACTUATOR_GAP,ACTUATOR_GAP+SWITCH_THROW],
             'limits':['Dimensional envelopes, not a fabrication release','Cover motion sampled, not a continuous swept-volume proof','TPU deformation and adhesive strength need a physical test','Speaker, cell contacts and cable insulation require purchased-part confirmation'],
             'intentional_contacts':[{'parts':sorted(k),'reason':v[0]} for k,v in contacts.items()]}
-    (OUT/'fit-report.json').write_text(json.dumps(report,indent=2)+'\n')
+    (out/'fit-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print('\n'.join(errors) if errors else 'Static fit checks passed',flush=True)
     assembly=cq.Assembly()
     for name,body in parts.items():
         assembly.add(body,name=name,color=cq.Color(colors[name]))
-    assembly.export(str(OUT/'assembly.step'))
+    assembly.export(str(out/'assembly.step'))
     opened=cq.Assembly()
     for name,body in parts.items():
         if name!='cover' and not name.startswith('closure_'):
             opened.add(body,name=name,color=cq.Color(colors[name]))
-    opened.export(str(OUT/'open.step'))
+    opened.export(str(out/'open.step'))
     for suffix,excluded in [('open',{'cover','closure_M2_1','closure_M2_2'}),('internals',{'cover','chassis','closure_M2_1','closure_M2_2'})]:
         mesh=cq.Compound.makeCompound([s for n,s in parts.items() if n not in excluded])
-        cq.exporters.export(mesh.rotate((0,0,0),(0,0,1),180),str(OUT/f'{suffix}.stl'),tolerance=.05)
-    e.export_stl(e.print_orientation(cq.Workplane(obj=parts['chassis'])),OUT/'chassis_print.stl')
-    e.export_stl(e.print_orientation(cq.Workplane(obj=parts['cover']),True),OUT/'cover_print.stl')
+        cq.exporters.export(mesh.rotate((0,0,0),(0,0,1),180),str(out/f'{suffix}.stl'),tolerance=.05)
+    e.export_stl(e.print_orientation(cq.Workplane(obj=parts['chassis'])),out/'chassis_print.stl')
+    e.export_stl(e.print_orientation(cq.Workplane(obj=parts['cover']),True),out/'cover_print.stl')
     for name,shape in prints.items():
         if name=='speaker_bridge':
             oriented=cq.Workplane(obj=shape).rotate((0,0,0),(1,0,0),180)
@@ -425,10 +498,10 @@ def main():
             oriented=cq.Workplane(obj=shape).rotate((0,0,0),(0,1,0),90 if 'TPU_cap' in name else -90)
         bb=oriented.val().BoundingBox()
         oriented=oriented.translate((-bb.center.x,-bb.center.y,-bb.zmin))
-        e.export_stl(oriented,OUT/f'{name}_print.stl')
+        e.export_stl(oriented,out/f'{name}_print.stl')
     assert not errors, 'Assembly fit failed: see fit-report.json'
     report['status']='PASS'
-    (OUT/'fit-report.json').write_text(json.dumps(report,indent=2)+'\n')
+    (out/'fit-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(f'PASS: {len(parts)} named bodies; all printable STLs watertight and connected',flush=True)
 
 
